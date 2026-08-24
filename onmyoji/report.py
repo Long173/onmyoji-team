@@ -115,6 +115,7 @@ def build_payload(
     unit_detail: Mapping[str, Any] | None = None,
     team_detail: Mapping[str, Any] | None = None,
     include_paid: bool = False,
+    paid_payload: Mapping[str, Any] | None = None,
     sibling_link: Mapping[str, str] | None = None,
 ) -> Mapping[str, Any]:
     """Gói dữ liệu mà template cần — thuần dữ liệu, không HTML."""
@@ -164,8 +165,14 @@ def build_payload(
         "shishen": [stat.as_dict() for stat in stats],
         **_unit_section(unit_rank),
         **_detail_section(unit_detail, teams),
-        **_paid_section(unit_detail, unit_rank, include_paid),
-        **_team_paid_section(team_detail, include_paid),
+        **(
+            dict(paid_payload)
+            if paid_payload
+            else {
+                **_paid_section(unit_detail, unit_rank, include_paid),
+                **_team_paid_section(team_detail, include_paid),
+            }
+        ),
     }
 
 
@@ -499,4 +506,46 @@ def team_paid_shishen_ids(payload: Mapping[str, Any]) -> tuple[int, ...]:
     for row in teams.values():
         for counter in row.get("counters") or ():
             found.update(int(i) for i in counter.get("team_ids") or ())
+    return tuple(sorted(found))
+
+
+PAID_PAYLOAD_KEYS = ("paid", "team_paid", "yuhun_all", "yys")
+
+
+def build_paid_payload(
+    unit_detail: Mapping[str, Any] | None,
+    unit_rank: Mapping[str, Any] | None,
+    team_detail: Mapping[str, Any] | None,
+) -> Mapping[str, Any]:
+    """Gom toàn bộ phần dữ liệu hội viên thành một khối để commit rồi trộn lại sau.
+
+    CI không lấy được dữ liệu này (refresh token dùng một lần, site chỉ cho một
+    session), nên nó được build tại máy, commit dạng JSON, và CI chỉ trộn vào.
+    """
+    return {
+        **_paid_section(unit_detail, unit_rank, include_paid=True),
+        **_team_paid_section(team_detail, include_paid=True),
+    }
+
+
+def paid_payload_is_empty(paid_payload: Mapping[str, Any] | None) -> bool:
+    if not paid_payload:
+        return True
+    units = ((paid_payload.get("paid") or {}).get("units")) or {}
+    teams = ((paid_payload.get("team_paid") or {}).get("teams")) or {}
+    return not units and not teams
+
+
+def paid_payload_shishen_ids(paid_payload: Mapping[str, Any]) -> tuple[int, ...]:
+    """式神 cần avatar cho phần dữ liệu hội viên (ghép cặp + counter + thứ tự pick)."""
+    found: set[int] = set()
+    for unit in (((paid_payload.get("paid") or {}).get("units")) or {}).values():
+        for key in ("synergies", "counters"):
+            for row in unit.get(key) or ():
+                found.add(int(row["shishen_id"]))
+    for team in (((paid_payload.get("team_paid") or {}).get("teams")) or {}).values():
+        for row in team.get("counters") or ():
+            found.update(int(i) for i in row.get("team_ids") or ())
+        for row in team.get("orders") or ():
+            found.update(int(i) for i in row.get("sequence") or ())
     return tuple(sorted(found))

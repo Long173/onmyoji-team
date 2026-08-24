@@ -43,29 +43,23 @@ jobs:
 
       # CI KHÔNG crawl được dữ liệu hội viên: refresh token của yysrank.win dùng
       # một lần và site chỉ cho một session (409 重复登录), nên CI refresh sẽ
-      # đăng xuất người dùng khỏi browser và ngược lại. Trang có dữ liệu hội viên
-      # được build tại máy rồi commit vào prebuilt/ (xem README).
+      # đăng xuất người dùng khỏi browser và ngược lại. Vì vậy khối dữ liệu đó
+      # được build tại máy rồi commit ở prebuilt/paid.json; build_report.py tự
+      # trộn vào, nên trang chỉ có MỘT bản duy nhất chứa đủ mọi thứ.
       - name: Crawl trend và đội hình theo 式神
         run: python3 crawl_shishen_detail.py --no-token
 
-      - name: Dựng báo cáo (chỉ dữ liệu mở)
+      - name: Dựng báo cáo
         run: |
-          FULL=""
-          if [ -f prebuilt/full.html ]; then FULL="--sibling-link full.html"; fi
+          if [ -f prebuilt/paid.json ]; then
+            echo "Có prebuilt/paid.json — trang sẽ gồm cả dữ liệu hội viên."
+          else
+            echo "Không có prebuilt/paid.json — trang chỉ có dữ liệu mở."
+          fi
           python3 build_report.py \
             --version-label "Phiên bản hiện hành" \
             --data-links \
-            $FULL \
             --output site/index.html
-
-      - name: Kèm trang dữ liệu hội viên nếu đã commit
-        run: |
-          if [ -f prebuilt/full.html ]; then
-            cp prebuilt/full.html site/full.html
-            echo "Đã kèm site/full.html ($(du -h prebuilt/full.html | cut -f1))"
-          else
-            echo "Không có prebuilt/full.html — site chỉ có dữ liệu mở."
-          fi
 
       - name: Kèm dữ liệu thô để tải về
         run: |

@@ -227,30 +227,30 @@ rồi ghi ngay cặp token mới xuống file. Refresh bừa bãi là đăng xu�
 Lỗi `409` được xếp vào `AUTH_FAILURE_CODES` cùng 401/403 (bundle của site cũng coi
 `401||409` là auth failure) và không retry.
 
-### Hai trang: `/` tự động, `/full.html` build tay
+### Một trang duy nhất, dữ liệu hội viên trộn từ file đã commit
 
-`build_report.py` mặc định **không** đưa dữ liệu hội viên vào báo cáo — phải khai
-`--include-paid`. Vì CI không lấy được dữ liệu đó, trang đầy đủ được build tại máy
-rồi commit vào `prebuilt/full.html`; workflow chỉ copy nó sang `site/full.html`.
+CI crawl được dữ liệu mở nhưng không crawl được dữ liệu hội viên. Để trang vẫn là
+**một bản duy nhất** mà vẫn tự cập nhật hằng ngày, khối dữ liệu hội viên được build tại
+máy, commit thành `prebuilt/paid.json` (109 KB), rồi `build_report.py` tự trộn vào mỗi
+lần build — kể cả trên CI, nơi không có token.
 
 ```bash
-# Sau khi đăng nhập lại và chạy ./save-token.sh
-python3 crawl_shishen_detail.py
+./save-token.sh                                  # sau khi đăng nhập lại yysrank.win
+python3 crawl_shishen_detail.py                  # dùng .token nếu có
 python3 crawl_team_detail.py --top 40 --by total
-python3 build_report.py --include-paid --data-links \
-  --sibling-link index.html --output prebuilt/full.html
-git add prebuilt/full.html && git commit -m "chore: cập nhật trang dữ liệu hội viên"
+python3 export_paid.py                           # -> prebuilt/paid.json
+git add prebuilt/paid.json && git commit -m "chore: cập nhật dữ liệu hội viên" && git push
 ```
 
-| Trang | Nguồn | Cập nhật |
+| Phần dữ liệu | Nguồn | Cập nhật |
 |---|---|---|
-| `/` | CI crawl, chỉ dữ liệu mở | tự động 01:00 UTC mỗi ngày |
-| `/full.html` | `prebuilt/full.html` đã commit | thủ công, khi bạn chạy lệnh trên |
+| Đội hình, xếp hạng 式神, trend, đội hình dưới ngưỡng | CI crawl | tự động 01:00 UTC mỗi ngày |
+| Ngự hồn chi tiết, ghép cặp, vị trí BP, thứ tự pick | `prebuilt/paid.json` đã commit | thủ công, khi chạy khối lệnh trên |
 
-Hai trang link chéo nhau ở masthead qua cờ `--sibling-link`.
+Muốn dựng bản không có dữ liệu hội viên: `build_report.py --no-paid-input`.
 
-`.token`, `.refresh-token`, `out/`, `report/`, `site/` vẫn gitignored — chỉ
-`prebuilt/full.html` được commit.
+`.token`, `.refresh-token`, `out/`, `report/`, `site/` gitignored — chỉ
+`prebuilt/paid.json` được commit.
 
 ### Màu thanh chênh lệch
 

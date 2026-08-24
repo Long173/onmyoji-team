@@ -23,6 +23,8 @@ from onmyoji.report import (
     build_payload,
     build_yuhun_css,
     now_stamp,
+    paid_payload_is_empty,
+    paid_payload_shishen_ids,
     paid_yuhun_ids,
     render_report,
 )
@@ -36,6 +38,7 @@ DEFAULT_YUHUN_DIR = Path("assets/yuhun")
 DEFAULT_UNIT_INPUT = Path("out/shishen-rank-current.json")
 DEFAULT_DETAIL_INPUT = Path("out/shishen-detail-current.json")
 DEFAULT_TEAM_DETAIL_INPUT = Path("out/team-detail-current.json")
+DEFAULT_PAID_INPUT = Path("prebuilt/paid.json")
 DATA_LINKS = (
     {"label": "đội hình JSON", "href": "team-rank-current.json"},
     {"label": "đội hình CSV", "href": "team-rank-current.csv"},
@@ -75,16 +78,24 @@ def build_parser() -> argparse.ArgumentParser:
         "--include-paid",
         action="store_true",
         help=(
-            "đưa dữ liệu hội viên basic (ngự hồn chi tiết, đi cùng/đối đầu, vị trí BP) "
-            "vào báo cáo. Đây là nội dung sau tường phí của yysrank.win — chỉ dùng cho "
-            "bản xem tại máy, KHÔNG bật khi build bản publish công khai."
+            "tính dữ liệu hội viên trực tiếp từ out/shishen-detail + out/team-detail "
+            "thay vì đọc prebuilt/paid.json. Chỉ cần khi vừa crawl xong và chưa "
+            "export_paid.py; đường thường ngày là để mặc định cho --paid-input lo."
         ),
     )
     parser.add_argument(
-        "--sibling-link",
-        default=None,
-        metavar="HREF",
-        help="thêm link sang trang còn lại ở masthead, vd `full.html` hoặc `index.html`",
+        "--paid-input",
+        type=Path,
+        default=DEFAULT_PAID_INPUT,
+        help=(
+            "khối dữ liệu hội viên đã commit (do export_paid.py sinh ra). Có file này thì "
+            "báo cáo tự trộn vào, khỏi cần token — đây là cách CI có được dữ liệu đó."
+        ),
+    )
+    parser.add_argument(
+        "--no-paid-input",
+        action="store_true",
+        help="bỏ qua prebuilt/paid.json, dựng bản chỉ có dữ liệu mở",
     )
     parser.add_argument(
         "--data-links",
@@ -131,8 +142,27 @@ def main(argv: list[str] | None = None) -> int:
     else:
         print(f"Không thấy {args.detail_input} — bỏ sparkline và đội hình dưới ngưỡng.", file=sys.stderr)
 
+    paid_payload: dict | None = None
+    if not args.no_paid_input and args.paid_input.is_file():
+        try:
+            candidate = json.loads(args.paid_input.read_text(encoding="utf-8"))
+        except (OSError, json.JSONDecodeError) as exc:
+            print(f"Bỏ qua {args.paid_input}: {exc}", file=sys.stderr)
+        else:
+            if paid_payload_is_empty(candidate):
+                print(f"{args.paid_input} rỗng — bỏ qua.", file=sys.stderr)
+            else:
+                paid_payload = candidate
+                merged_units = len(((candidate.get("paid") or {}).get("units")) or {})
+                merged_teams = len(((candidate.get("team_paid") or {}).get("teams")) or {})
+                print(
+                    f"Trộn dữ liệu hội viên từ {args.paid_input}: "
+                    f"{merged_units} 式神, {merged_teams} đội hình.",
+                    file=sys.stderr,
+                )
+
     team_detail: dict | None = None
-    if args.include_paid and args.team_detail_input.is_file():
+    if args.include_paid and not paid_payload and args.team_detail_input.is_file():
         try:
             team_detail = json.loads(args.team_detail_input.read_text(encoding="utf-8"))
         except (OSError, json.JSONDecodeError) as exc:
@@ -146,6 +176,7 @@ def main(argv: list[str] | None = None) -> int:
         for row in ((entry.get("detail") or {}).get("counter") or [])
         for sid in (row.get("team") or [])
     }
+    paid_shishen_ids = set(paid_payload_shishen_ids(paid_payload)) if paid_payload else set()
     hidden_ids = {
         int(sid)
         for entry in ((unit_detail or {}).get("details") or [])
@@ -158,10 +189,13 @@ def main(argv: list[str] | None = None) -> int:
             | set(referenced_shishen_ids(unit_rows))
             | hidden_ids
             | team_counter_ids
+            | paid_shishen_ids
         )
     )
     yuhun_ids = referenced_yuhun_ids(unit_rows)
-    if args.include_paid:
+    if paid_payload:
+        yuhun_ids = tuple(sorted(set(yuhun_ids) | set(paid_yuhun_ids(paid_payload))))
+    elif args.include_paid:
         paid_ids = {
             int(row["yuhun_id"])
             for entry in ((unit_detail or {}).get("details") or [])
@@ -210,18 +244,7 @@ def main(argv: list[str] | None = None) -> int:
             unit_detail=unit_detail,
             team_detail=team_detail,
             include_paid=args.include_paid,
-            sibling_link=(
-                {
-                    "href": args.sibling_link,
-                    "label": (
-                        "Bản chỉ dữ liệu mở"
-                        if args.include_paid
-                        else "Bản đầy đủ (có dữ liệu hội viên)"
-                    ),
-                }
-                if args.sibling_link
-                else None
-            ),
+            paid_payload=paid_payload,
         )
         avatar_css = build_avatar_css(shishen_ids, args.avatar_dir)
         yuhun_css = build_yuhun_css(yuhun_ids, args.yuhun_dir)
@@ -234,7 +257,7 @@ def main(argv: list[str] | None = None) -> int:
     args.output.write_text(html, encoding="utf-8")
     size_mb = args.output.stat().st_size / 1_048_576
     paid_note = ""
-    if args.include_paid:
+    if args.include_paid or paid_payload:
         paid_units = len(((payload.get("paid") or {}).get("units")) or {})
         paid_teams = len(((payload.get("team_paid") or {}).get("teams")) or {})
         paid_note = f", {paid_units} 式神 + {paid_teams} đội hình có dữ liệu hội viên"
