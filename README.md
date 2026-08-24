@@ -281,25 +281,33 @@ các lựa chọn phổ biến đạt 100–354 trận.
 Đối chiếu với ngự hồn meta-wide ở tab 式神 (mẫu hàng nghìn trận): 3/5 vị trí khớp,
 2 vị trí khác — phần khác nhau mới là thứ đáng xem, nhưng cũng có thể là do mẫu lệch.
 
-### Lọc nhiều 式神, có loại trừ
+### Lọc nhiều 式神: chọn từ gợi ý, áp dụng bằng nút
 
-Hai ô ở cả **Sổ đội hình** và **Đội hình dưới ngưỡng**:
+Bảng đội hình có 676 dòng × 5 avatar (~925 KB HTML mỗi lần render), nên **lọc theo
+từng ký tự gõ là không dùng được** — mỗi keystroke dựng lại toàn bộ chuỗi HTML.
+Debounce chỉ giảm bớt. Cách xử lý:
 
-| Ô | Ngữ nghĩa | Ví dụ |
-|---|---|---|
-| **Có 式神** | dấu phẩy = **AND** — đội phải chứa tất cả | `tuu thon, diem ma` |
-| **Không có** | dấu phẩy = **OR** — trùng một từ là loại | `cat diep` |
+- Gõ vào ô → hiện **popup gợi ý** (tối đa 8 式神, kèm avatar, tên Trung, và số đội
+  hình chứa nó). Điều hướng bằng ↑/↓, chọn bằng Enter hoặc chuột, Esc để đóng,
+  Backspace ở ô trống để bỏ chip cuối.
+- Mỗi lựa chọn thành một **chip** có nút ×. **Không render gì trong lúc này.**
+- Bấm **Lọc** mới lọc. Nút sáng viền vàng kèm chữ "có thay đổi chưa áp dụng" khi
+  bộ lọc trên ô khác với bộ đang áp dụng.
+- Enter khi không có gợi ý nào được chọn = áp dụng luôn.
 
-Khớp theo **chuỗi con** trên tên Hán-Việt, tên gốc tiếng Trung, tên thông dụng và id;
-gõ **không dấu vẫn khớp** (bỏ dấu phụ hai phía, `đ`→`d`). Nên `tuu thon`, `Tửu Thôn`
-và `酒吞` cho cùng kết quả. Tab 式神 dùng cùng cơ chế, thêm cả tên ngự hồn.
+Đo bằng test DOM: gõ 3 ký tự → **0 lần render**; chọn 3 chip → **0 lần render**;
+bấm Lọc → **1 lần render**.
 
-Dưới thanh điều khiển có dãy chip echo lại từ khoá kèm **số 式神 khớp**, và tô viền
-gạch đỏ khi từ khoá không khớp con nào — để không ngồi nhìn bảng rỗng mà tưởng
-không có đội hình nào.
+Lọc theo **id 式神** (chính xác, không có bất ngờ kiểu chuỗi con). Chữ còn sót trong
+ô lúc bấm Lọc được dùng như từ khoá chuỗi con, nên vẫn gõ nhanh rồi Enter được.
+Gợi ý khớp không dấu (`đ`→`d`, bỏ dấu phụ NFD) trên tên Hán-Việt, tên Trung, tên
+thông dụng và id — `cat`, `Cát`, `葛叶` đều ra Cát Diệp.
 
-Kiểm chứng trên dữ liệu thật: `tuu thon` → 94 đội, `diem ma` → 153, cả hai (AND)
-→ 17, thêm trừ `cat diep` → 16. Đối chiếu bằng đoạn JS độc lập cũng ra 16.
+Tab 式神 vẫn dùng ô text thường: chỉ 42 dòng nên render mỗi keystroke không hề chậm.
+
+⚠️ Một bug đã bắt được nhờ test: cả picker và listener "Enter để áp dụng" đều gắn
+`keydown` trên cùng ô. Picker đóng popup trước, listener sau thấy popup đã đóng nên
+bấm nút Lọc → render mỗi lần thêm chip. Fix bằng cờ `event.pickerCommitted`.
 
 ### Màu thanh chênh lệch
 

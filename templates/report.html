@@ -329,6 +329,133 @@ section.block { padding-top: 56px; }
   font-variant-numeric: tabular-nums;
 }
 
+/* ---------- o chon 式神 co goi y ---------- */
+
+.picker { position: relative; display: flex; flex-direction: column; gap: 5px; }
+
+.picker-box {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  align-items: center;
+  min-width: 250px;
+  min-height: 34px;
+  padding: 4px 6px;
+  background: var(--surface);
+  border: 1px solid var(--hairline);
+  border-radius: 2px;
+}
+
+.picker-box:focus-within { border-color: var(--jade); }
+.picker.exclude .picker-box:focus-within { border-color: var(--chart-neg); }
+
+.picker-box input {
+  flex: 1 1 90px;
+  min-width: 90px;
+  border: none;
+  background: none;
+  outline: none;
+  color: var(--ink);
+  font-family: var(--f-body);
+  font-size: 13.5px;
+  padding: 2px 0;
+}
+
+.sel-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 2px 4px 2px 6px;
+  border-radius: 2px;
+  background: var(--surface-2);
+  border: 1px solid var(--chart-line);
+  font-size: 12px;
+  line-height: 1.3;
+  color: var(--ink-soft);
+  max-width: 100%;
+}
+
+.picker.exclude .sel-chip { border-color: var(--chart-neg); }
+
+.sel-chip .av { width: 18px; height: 18px; }
+
+.sel-chip button {
+  appearance: none;
+  background: none;
+  border: none;
+  color: var(--muted);
+  cursor: pointer;
+  font-family: var(--f-data);
+  font-size: 13px;
+  line-height: 1;
+  padding: 0 1px;
+}
+
+.sel-chip button:hover { color: var(--chart-neg); }
+
+.suggest {
+  position: absolute;
+  top: calc(100% + 3px);
+  left: 0;
+  z-index: 12;
+  width: 100%;
+  min-width: 250px;
+  max-height: 260px;
+  overflow-y: auto;
+  background: var(--surface);
+  border: 1px solid var(--hairline);
+  border-radius: 2px;
+  box-shadow: 0 6px 22px rgb(0 0 0 / 0.16);
+  padding: 3px;
+}
+
+.suggest[hidden] { display: none; }
+
+.suggest-item {
+  display: grid;
+  grid-template-columns: 26px minmax(0, 1fr) auto;
+  gap: 9px;
+  align-items: center;
+  padding: 5px 7px;
+  border-radius: 2px;
+  cursor: pointer;
+}
+
+.suggest-item[aria-selected="true"] { background: var(--surface-2); }
+.suggest-item .vn { font-size: 13px; color: var(--ink); }
+.suggest-item .cn { font-family: var(--f-cjk); font-size: 11.5px; color: var(--muted); }
+.suggest-item .meta { font-family: var(--f-data); font-size: 10.5px; color: var(--muted); }
+.suggest-empty { padding: 8px 9px; font-size: 12.5px; color: var(--muted); }
+
+.apply-btn {
+  appearance: none;
+  border: 1px solid var(--jade);
+  background: var(--surface);
+  color: var(--ink);
+  border-radius: 2px;
+  cursor: pointer;
+  font-family: var(--f-body);
+  font-size: 13.5px;
+  font-weight: 500;
+  padding: 7px 16px;
+}
+
+.apply-btn:hover { background: var(--surface-2); }
+
+.apply-btn.pending {
+  border-color: var(--gold);
+  box-shadow: inset 0 0 0 1px var(--gold);
+}
+
+.apply-btn:disabled { opacity: 0.5; cursor: default; box-shadow: none; }
+
+.apply-note {
+  font-family: var(--f-data);
+  font-size: 10.5px;
+  color: var(--gold);
+  min-height: 13px;
+}
+
 .result-count {
   margin-left: auto;
   font-family: var(--f-data);
@@ -1103,12 +1230,28 @@ __AVATAR_CSS__
 
     <div class="controls">
       <div class="field">
-        <label for="q">Có 式神 <span class="sub-hint">(phẩy = và)</span></label>
-        <input id="q" type="search" placeholder="tuu thon, diem ma" autocomplete="off">
+        <label for="q">Có 式神 <span class="sub-hint">(chọn nhiều — phải có hết)</span></label>
+        <div class="picker" id="pick-inc">
+          <div class="picker-box">
+            <input id="q" type="text" placeholder="gõ cat, tuu…" autocomplete="off"
+                   role="combobox" aria-expanded="false" aria-autocomplete="list" aria-controls="sug-inc">
+          </div>
+          <div class="suggest" id="sug-inc" role="listbox" hidden></div>
+        </div>
       </div>
       <div class="field">
-        <label for="qx">Không có <span class="sub-hint">(phẩy = hoặc)</span></label>
-        <input id="qx" type="search" class="exclude" placeholder="cat diep" autocomplete="off">
+        <label for="qx">Không có <span class="sub-hint">(loại nếu chứa bất kỳ)</span></label>
+        <div class="picker exclude" id="pick-exc">
+          <div class="picker-box">
+            <input id="qx" type="text" placeholder="gõ cat diep…" autocomplete="off"
+                   role="combobox" aria-expanded="false" aria-autocomplete="list" aria-controls="sug-exc">
+          </div>
+          <div class="suggest" id="sug-exc" role="listbox" hidden></div>
+        </div>
+      </div>
+      <div class="field">
+        <button type="button" class="apply-btn" id="apply-teams" disabled>Lọc</button>
+        <span class="apply-note" id="apply-note-teams"></span>
       </div>
       <div class="field">
         <label for="sort">Sắp xếp</label>
@@ -1191,12 +1334,28 @@ __AVATAR_CSS__
     <p class="hidden-note" id="hidden-note"></p>
     <div class="controls">
       <div class="field">
-        <label for="hq">Có 式神 <span class="sub-hint">(phẩy = và)</span></label>
-        <input id="hq" type="search" placeholder="hoang kho lau, 585" autocomplete="off">
+        <label for="hq">Có 式神 <span class="sub-hint">(chọn nhiều — phải có hết)</span></label>
+        <div class="picker" id="hpick-inc">
+          <div class="picker-box">
+            <input id="hq" type="text" placeholder="gõ hoang, cat…" autocomplete="off"
+                   role="combobox" aria-expanded="false" aria-autocomplete="list" aria-controls="hsug-inc">
+          </div>
+          <div class="suggest" id="hsug-inc" role="listbox" hidden></div>
+        </div>
       </div>
       <div class="field">
-        <label for="hqx">Không có <span class="sub-hint">(phẩy = hoặc)</span></label>
-        <input id="hqx" type="search" class="exclude" placeholder="cat diep" autocomplete="off">
+        <label for="hqx">Không có <span class="sub-hint">(loại nếu chứa bất kỳ)</span></label>
+        <div class="picker exclude" id="hpick-exc">
+          <div class="picker-box">
+            <input id="hqx" type="text" placeholder="gõ cat diep…" autocomplete="off"
+                   role="combobox" aria-expanded="false" aria-autocomplete="list" aria-controls="hsug-exc">
+          </div>
+          <div class="suggest" id="hsug-exc" role="listbox" hidden></div>
+        </div>
+      </div>
+      <div class="field">
+        <button type="button" class="apply-btn" id="apply-hidden" disabled>Lọc</button>
+        <span class="apply-note" id="apply-note-hidden"></span>
       </div>
       <div class="field">
         <label for="hmin">Số trận tối thiểu</label>
@@ -1355,8 +1514,10 @@ __AVATAR_CSS__
   var LEDGER_LIMIT = 800;
   var ledger = document.getElementById("ledger");
   var onlyDetailEl = document.getElementById("only-detail");
-  var qxEl = document.getElementById("qx");
   var echoEl = document.getElementById("filter-echo");
+  var refreshTeamsApply = function () {};
+  var incPicker = createPicker("q", "sug-inc", function () { refreshTeamsApply(); });
+  var excPicker = createPicker("qx", "sug-exc", function () { refreshTeamsApply(); });
   var countEl = document.getElementById("count");
   var qEl = document.getElementById("q");
   var sortEl = document.getElementById("sort");
@@ -1530,47 +1691,213 @@ __AVATAR_CSS__
       .filter(Boolean);
   }
 
-  function termHits(term) {
-    var hits = [];
-    Object.keys(NAMES).forEach(function (id) {
-      if (shishenHaystack(Number(id)).indexOf(term) !== -1) hits.push(Number(id));
+  var SUGGEST_LIMIT = 8;
+
+  /* Danh sách gợi ý: chỉ 式神 thật sự có trong dữ liệu, kèm số đội hình chứa nó
+     để người chọn biết ngay từ khoá đó có bao nhiêu kết quả. */
+  var SUGGEST_POOL = (function () {
+    var counts = {};
+    TEAMS.forEach(function (t) {
+      t.team_ids.forEach(function (id) { counts[id] = (counts[id] || 0) + 1; });
     });
-    return hits;
-  }
+    return Object.keys(NAMES).map(function (id) {
+      var n = nameOf(Number(id));
+      return {
+        id: Number(id),
+        vn: n.vn,
+        cn: n.cn,
+        teams: counts[id] || 0,
+        hay: normalizeText(n.vn + " " + n.cn + " " + n.common + " " + id)
+      };
+    }).sort(function (a, b) { return b.teams - a.teams; });
+  })();
 
-  function teamMatchesTerms(team, includes, excludes) {
-    var hay = team.team_ids.map(shishenHaystack);
+  /* Ô chọn 式神: gõ ra popup gợi ý, chọn thành chip. KHÔNG lọc khi gõ —
+     chỉ khi bấm nút, vì mỗi lần lọc là render lại toàn bộ bảng. */
+  function createPicker(inputId, suggestId, onCommitChange) {
+    var input = document.getElementById(inputId);
+    var suggest = document.getElementById(suggestId);
+    var box = input.parentNode;
+    var selected = [];
+    var matches = [];
+    var cursor = -1;
 
-    for (var i = 0; i < includes.length; i += 1) {
-      var wanted = includes[i];
-      var found = false;
-      for (var a = 0; a < hay.length; a += 1) {
-        if (hay[a].indexOf(wanted) !== -1) { found = true; break; }
-      }
-      if (!found) return false;
+    function closeSuggest() {
+      suggest.hidden = true;
+      suggest.innerHTML = "";
+      input.setAttribute("aria-expanded", "false");
+      cursor = -1;
     }
 
-    for (var j = 0; j < excludes.length; j += 1) {
-      var banned = excludes[j];
-      for (var b = 0; b < hay.length; b += 1) {
-        if (hay[b].indexOf(banned) !== -1) return false;
+    function renderChips() {
+      Array.prototype.slice.call(box.querySelectorAll(".sel-chip")).forEach(function (el) {
+        box.removeChild(el);
+      });
+      selected.forEach(function (item) {
+        var chip = document.createElement("span");
+        chip.className = "sel-chip";
+        chip.innerHTML = '<span class="av a' + item.id + '" role="img" aria-label="' + item.vn + '"></span>' +
+          "<span>" + item.vn + "</span>";
+        var remove = document.createElement("button");
+        remove.type = "button";
+        remove.textContent = "×";
+        remove.setAttribute("aria-label", "Bỏ " + item.vn);
+        remove.addEventListener("click", function () {
+          selected = selected.filter(function (x) { return x.id !== item.id; });
+          renderChips();
+          onCommitChange();
+          input.focus();
+        });
+        chip.appendChild(remove);
+        box.insertBefore(chip, input);
+      });
+    }
+
+    function renderSuggest() {
+      var term = normalizeText(input.value.trim());
+      if (!term) return closeSuggest();
+
+      var chosen = {};
+      selected.forEach(function (x) { chosen[x.id] = true; });
+      matches = SUGGEST_POOL.filter(function (x) {
+        return !chosen[x.id] && x.hay.indexOf(term) !== -1;
+      }).slice(0, SUGGEST_LIMIT);
+
+      if (!matches.length) {
+        suggest.innerHTML = '<div class="suggest-empty">Không có 式神 nào khớp “' + input.value.trim() + "”</div>";
+        suggest.hidden = false;
+        input.setAttribute("aria-expanded", "true");
+        cursor = -1;
+        return;
       }
+
+      cursor = 0;
+      suggest.innerHTML = matches.map(function (x, i) {
+        return '<div class="suggest-item" role="option" data-index="' + i + '"' +
+          ' aria-selected="' + (i === 0 ? "true" : "false") + '">' +
+          '<span class="av sm a' + x.id + '" role="img" aria-label="' + x.vn + '"></span>' +
+          '<span><span class="vn">' + x.vn + '</span> <span class="cn">' + x.cn + "</span></span>" +
+          '<span class="meta">' + x.teams + " đội</span></div>";
+      }).join("");
+      suggest.hidden = false;
+      input.setAttribute("aria-expanded", "true");
+    }
+
+    function moveCursor(step) {
+      if (suggest.hidden || !matches.length) return;
+      cursor = (cursor + step + matches.length) % matches.length;
+      Array.prototype.slice.call(suggest.querySelectorAll(".suggest-item")).forEach(function (el, i) {
+        el.setAttribute("aria-selected", i === cursor ? "true" : "false");
+      });
+      var active = suggest.querySelector('[aria-selected="true"]');
+      if (active && active.scrollIntoView) active.scrollIntoView({ block: "nearest" });
+    }
+
+    function commit(item) {
+      if (!item) return;
+      selected.push(item);
+      input.value = "";
+      closeSuggest();
+      renderChips();
+      onCommitChange();
+    }
+
+    input.addEventListener("input", renderSuggest);
+    input.addEventListener("focus", renderSuggest);
+    input.addEventListener("keydown", function (event) {
+      if (event.key === "ArrowDown") { event.preventDefault(); moveCursor(1); }
+      else if (event.key === "ArrowUp") { event.preventDefault(); moveCursor(-1); }
+      else if (event.key === "Enter") {
+        event.preventDefault();
+        // Đánh dấu để listener 'áp dụng khi Enter' không chạy theo: Enter đang
+        // dùng để chọn gợi ý, chưa phải để lọc.
+        if (matches[cursor]) event.pickerCommitted = true;
+        commit(matches[cursor]);
+      }
+      else if (event.key === "Escape") { closeSuggest(); }
+      else if (event.key === "Backspace" && !input.value && selected.length) {
+        selected.pop();
+        renderChips();
+        onCommitChange();
+      }
+    });
+    input.addEventListener("blur", function () {
+      // Chờ một nhịp để click vào gợi ý kịp chạy trước khi popup đóng.
+      setTimeout(closeSuggest, 140);
+    });
+    suggest.addEventListener("mousedown", function (event) {
+      var item = event.target.closest(".suggest-item");
+      if (!item) return;
+      event.preventDefault();
+      commit(matches[Number(item.dataset.index)]);
+    });
+
+    return {
+      ids: function () { return selected.map(function (x) { return x.id; }); },
+      names: function () { return selected.map(function (x) { return x.vn; }); },
+      pendingText: function () { return normalizeText(input.value.trim()); }
+    };
+  }
+
+  /* Lọc theo id — chính xác, không có bất ngờ kiểu chuỗi con. */
+  function teamMatchesIds(team, includeIds, excludeIds, freeTerm) {
+    for (var i = 0; i < includeIds.length; i += 1) {
+      if (team.team_ids.indexOf(includeIds[i]) === -1) return false;
+    }
+    for (var j = 0; j < excludeIds.length; j += 1) {
+      if (team.team_ids.indexOf(excludeIds[j]) !== -1) return false;
+    }
+    if (freeTerm) {
+      var hit = false;
+      for (var k = 0; k < team.team_ids.length; k += 1) {
+        if (shishenHaystack(team.team_ids[k]).indexOf(freeTerm) !== -1) { hit = true; break; }
+      }
+      if (!hit) return false;
     }
     return true;
   }
 
-  function renderFilterEcho(target, includes, excludes) {
+  function renderAppliedEcho(target, applied, incPick, excPick) {
     if (!target) return;
-    var chips = includes.map(function (t) {
-      var n = termHits(t).length;
-      return '<span class="chip ' + (n ? "yes" : "miss") + '">' +
-        (n ? "có " : "không có 式神 nào khớp: ") + t + (n ? " (" + n + ")" : "") + "</span>";
-    }).concat(excludes.map(function (t) {
-      var n = termHits(t).length;
-      return '<span class="chip ' + (n ? "no" : "miss") + '">' +
-        (n ? "trừ " : "không có 式神 nào khớp: ") + t + (n ? " (" + n + ")" : "") + "</span>";
-    }));
-    target.innerHTML = chips.join("");
+    var parts = [];
+    applied.include.forEach(function (id) {
+      parts.push('<span class="chip yes">có ' + nameOf(id).vn + "</span>");
+    });
+    applied.exclude.forEach(function (id) {
+      parts.push('<span class="chip no">trừ ' + nameOf(id).vn + "</span>");
+    });
+    if (applied.free) {
+      parts.push('<span class="chip yes">chữ “' + applied.free + '”</span>');
+    }
+    target.innerHTML = parts.length ? "Đang lọc: " + parts.join("") : "";
+  }
+
+  function samePicker(applied, incPick, excPick) {
+    var a = applied.include.join(",") + "|" + applied.exclude.join(",") + "|" + applied.free;
+    var b = incPick.ids().join(",") + "|" + excPick.ids().join(",") + "|" + incPick.pendingText();
+    return a === b;
+  }
+
+  function wireApply(buttonId, noteId, incPick, excPick, applied, doRender) {
+    var button = document.getElementById(buttonId);
+    var note = document.getElementById(noteId);
+
+    function refresh() {
+      var dirty = !samePicker(applied, incPick, excPick);
+      button.disabled = !dirty;
+      button.classList[dirty ? "add" : "remove"]("pending");
+      note.textContent = dirty ? "có thay đổi chưa áp dụng" : "";
+    }
+
+    button.addEventListener("click", function () {
+      applied.include = incPick.ids();
+      applied.exclude = excPick.ids();
+      applied.free = incPick.pendingText();
+      doRender();
+      refresh();
+    });
+
+    return refresh;
   }
 
   function hasDetail(team) {
@@ -1578,18 +1905,20 @@ __AVATAR_CSS__
     return Boolean(TEAM_PAID[key] || TEAM_YUHUN[key]);
   }
 
+  // Bộ lọc ĐANG áp dụng. Tách khỏi ô nhập để gõ không kéo theo render.
+  var appliedTeams = { include: [], exclude: [], free: "" };
+
   function render() {
-    var includes = parseTerms(qEl.value);
-    var excludes = parseTerms(qxEl.value);
     var floor = Number(minEl.value);
     var key = sortEl.value;
     var onlyDetail = onlyDetailEl.checked;
 
-    renderFilterEcho(echoEl, includes, excludes);
+    renderAppliedEcho(echoEl, appliedTeams, incPicker, excPicker);
 
     var rows = TEAMS.filter(function (t) {
       if (onlyDetail && !hasDetail(t)) return false;
-      return t.total >= floor && teamMatchesTerms(t, includes, excludes);
+      return t.total >= floor &&
+        teamMatchesIds(t, appliedTeams.include, appliedTeams.exclude, appliedTeams.free);
     }).slice().sort(function (a, b) {
       return b[key] - a[key];
     });
@@ -1617,8 +1946,15 @@ __AVATAR_CSS__
     onlyDetailEl.addEventListener("change", render);
   }
 
-  qEl.addEventListener("input", render);
-  qxEl.addEventListener("input", render);
+  refreshTeamsApply = wireApply("apply-teams", "apply-note-teams", incPicker, excPicker, appliedTeams, render);
+  qEl.addEventListener("input", function () { refreshTeamsApply(); });
+  qEl.addEventListener("keydown", function (event) {
+    // Enter khi KHÔNG chọn gợi ý nào = áp dụng luôn, khỏi với tay sang nút.
+    if (event.key === "Enter" && !event.pickerCommitted) {
+      document.getElementById("apply-teams").click();
+    }
+  });
+  document.getElementById("qx").addEventListener("input", function () { refreshTeamsApply(); });
   ledger.addEventListener("click", toggleDetail);
   sortEl.addEventListener("change", render);
   minEl.addEventListener("input", function () {
@@ -1994,7 +2330,9 @@ __AVATAR_CSS__
 
   var hiddenLedger = document.getElementById("hidden-ledger");
   var hqEl = document.getElementById("hq");
-  var hqxEl = document.getElementById("hqx");
+  var refreshHiddenApply = function () {};
+  var hIncPicker = createPicker("hq", "hsug-inc", function () { refreshHiddenApply(); });
+  var hExcPicker = createPicker("hqx", "hsug-exc", function () { refreshHiddenApply(); });
   var hminEl = document.getElementById("hmin");
   var hminValEl = document.getElementById("hmin-val");
   var hcountEl = document.getElementById("hcount");
@@ -2018,13 +2356,14 @@ __AVATAR_CSS__
       "</div></li>";
   }
 
+  var appliedHidden = { include: [], exclude: [], free: "" };
+
   function renderHidden() {
-    var includes = parseTerms(hqEl.value);
-    var excludes = parseTerms(hqxEl.value);
     var floor = Number(hminEl.value);
 
     var rows = HIDDEN_TEAMS.filter(function (r) {
-      return r.matches >= floor && teamMatchesTerms(r, includes, excludes);
+      return r.matches >= floor &&
+        teamMatchesIds(r, appliedHidden.include, appliedHidden.exclude, appliedHidden.free);
     });
 
     hcountEl.textContent = intFmt.format(rows.length) + " / " + intFmt.format(HIDDEN_TEAMS.length) + " đội hình";
@@ -2051,8 +2390,16 @@ __AVATAR_CSS__
       " trận trở lên; trang hiện " + intFmt.format(HIDDEN_TEAMS.length) + " đội thắng cao nhất. " +
       "<b>Mẫu nhỏ thì tỉ lệ thắng dao động mạnh</b> — kéo ngưỡng số trận lên để lọc bớt nhiễu.";
 
-    hqEl.addEventListener("input", renderHidden);
-    hqxEl.addEventListener("input", renderHidden);
+    refreshHiddenApply = wireApply(
+      "apply-hidden", "apply-note-hidden", hIncPicker, hExcPicker, appliedHidden, renderHidden
+    );
+    hqEl.addEventListener("input", function () { refreshHiddenApply(); });
+    hqEl.addEventListener("keydown", function (event) {
+      if (event.key === "Enter" && !event.pickerCommitted) {
+        document.getElementById("apply-hidden").click();
+      }
+    });
+    document.getElementById("hqx").addEventListener("input", function () { refreshHiddenApply(); });
     hminEl.addEventListener("input", function () {
       hminValEl.textContent = "≥ " + intFmt.format(Number(hminEl.value));
       renderHidden();
