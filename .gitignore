@@ -8,3 +8,7 @@ report/
 site/
 assets/avatars/
 assets/yuhun/
+
+# Token đăng nhập yysrank.win — TUYỆT ĐỐI không commit
+.token
+*.token

@@ -41,6 +41,9 @@ jobs:
       - name: Crawl bảng xếp hạng 式神
         run: python3 crawl_shishen_rank.py --slug shishen-rank-current
 
+      - name: Crawl trend và đội hình theo 式神
+        run: python3 crawl_shishen_detail.py
+
       - name: Dựng báo cáo
         run: |
           python3 build_report.py \
@@ -51,7 +54,7 @@ jobs:
       - name: Kèm dữ liệu thô để tải về
         run: |
           cp out/team-rank-current.json out/team-rank-current.csv site/
-          cp out/shishen-rank-current.json site/
+          cp out/shishen-rank-current.json out/shishen-detail-current.json site/
 
       - uses: actions/configure-pages@v5
 

@@ -11,6 +11,7 @@ Site là SPA (Vue + Vite), toàn bộ dữ liệu đến từ REST API cùng dom
 |---|---|
 | `GET /api/team/rank` | bảng阵容 của trang `#/query/team` |
 | `GET /api/shishen/rank` | xếp hạng 式神: tier, chọn/ban/thắng, ngự hồn thường dùng, counter |
+| `GET /api/shishen/detail` | `trend` 33 ngày + `summary.teams` (100 đội hình, **không áp ngưỡng**) |
 | `GET /api/asset/shishen` | map `shishen_id` → tên 式神 |
 | `GET /api/asset/shishen_stats` | chỉ số gốc của 273 式神 |
 | `GET /api/asset/yuhun` | 79 ngự hồn: tên, icon, hiệu ứng bộ |
@@ -114,9 +115,15 @@ Mỗi dòng: `tier` (0 mạnh nhất → 3), `tier_score`, `win_rate` (外战胜
 | Tên + icon ngự hồn | `/api/asset/yuhun` | mở |
 | 3 ngự hồn hay dùng / 式神 | `/api/shishen/rank` | mở |
 | Phân bố ngự hồn đầy đủ | `/api/shishen/detail` → `summary.yuhuns` | trả rỗng — cần hội viên `basic` |
-| Ngự hồn theo từng đội hình | `/api/team/yuhun` | `401 请登录后使用本功能` |
-| Chi tiết đội hình | `/api/team/detail` | `401` |
+| Ngự hồn theo từng đội hình | `/api/team/yuhun` | cần `basic` |
+| Chi tiết đội hình | `/api/team/detail` | cần `basic` |
 | Counter chi tiết, advance rank, team-counter | `/api/shishen/counter_detail`, `/api/advance/rank`, `/api/team-counter/*` | `401` |
+
+**Tài khoản free không mở thêm dữ liệu nào.** Đã kiểm bằng token thật: route
+`/query/team/detail` khai `accessTier: "free"` nhưng đó chỉ là quyền *mở trang* — API bên
+dưới trả `请升级到基础版或高级版(Pro)以解锁本功能`. So sánh `/api/shishen/detail` có token
+free vs không token cho kết quả giống hệt. Free chỉ thêm `/api/user/*` (thông tin tài khoản
+của chính bạn).
 
 ⚠️ **Icon ngự hồn nằm trên CDN NetEase** (`ok.166.net`) và CDN đó trả `403` nếu request
 mang `Referer` trỏ về yysrank.win — vì vậy site đặt `referrerpolicy="no-referrer"` trên
@@ -127,6 +134,48 @@ thẻ `<img>`. `onmyoji/avatars.py` bỏ header `Referer` cho URL ngoài (`EXTER
 Bảng Hán-Việt đã mở rộng lên **507 ký tự**, phủ 100% tên của cả 277 式神 và 79 ngự hồn:
 轮入道 → Luân Nhập Đạo, 火灵 → Hỏa Linh, 招财猫 → Chiêu Tài Miêu, 魍魉之匣 → Vọng Lượng Chi Hạp.
 Hiệu ứng bộ cũng dịch sang tiếng Việt (`AttackRate` → Tấn công, `CritPower` → Bạo sát…).
+
+## Trend và đội hình dưới ngưỡng
+
+```bash
+python3 crawl_shishen_detail.py          # 42 request, nghỉ 0.8s
+```
+
+`/api/shishen/detail?id=<shishen_id>` (chú ý: `id`, **không** phải `shishen_id`) trả về:
+
+| Mục | Trạng thái |
+|---|---|
+| `trend` — mỗi ngày một điểm `win_rate` / `pick_rate` / `ban_rate` | mở |
+| `summary.teams` — tối đa 100 đội hình chứa 式神 đó, **không áp ngưỡng số trận** | mở |
+| `summary.yuhuns` / `positions` / `counters` / `synergies`, `ban_stats` | rỗng — cần hội viên `basic` |
+
+### Quy đổi `pick_rate` sang số trận
+
+`summary.teams` không có field `total`, nhưng ở bảng xếp hạng đội hình tỉ số
+`total / pick_rate` **bằng nhau tuyệt đối** trên cả 676 dòng (lệch 0,00%) — nó chính là
+tổng lượt chọn trong khoảng lọc (453.810 ở phiên bản hiện tại). Nên:
+
+```
+số trận = pick_rate × (total / pick_rate của bất kỳ đội hình đã xếp hạng)
+```
+
+`onmyoji/report.py::derive_pick_base()` tính hằng số này từ dữ liệu mỗi lần build thay vì
+hardcode, vì nó thay đổi theo khoảng thời gian lọc. Nhờ vậy 827 đội hình ngoài bảng xếp hạng
+có số trận thật, và lọc được nhiễu mẫu nhỏ.
+
+⚠️ Đội hình dưới ngưỡng có mẫu nhỏ nên tỉ lệ thắng dao động mạnh. Báo cáo mặc định
+lọc từ 50 trận và ghi rõ cảnh báo này trên trang.
+
+### Sparkline
+
+Một series duy nhất (`win_rate`), **không tô area fill** vì trục y bị zoom — tô fill trên
+baseline khác 0 là gây hiểu sai. Thang y dùng chung cho cả 42 sparkline nên so sánh được
+giữa các 式神; có mốc 50% (ngưỡng thắng/thua ngang bằng) và điểm cuối được nhấn.
+
+Màu mark được kiểm bằng `validate_palette.js` của skill `dataviz` thay vì chọn bằng mắt:
+light `#00805F`, dark `#2FA588` — cả hai pass lightness band, chroma floor và contrast.
+Màu accent UI cũ (`#1C6B58` / `#4EC0A0`) không đạt chroma floor khi làm mark biểu đồ nên
+biểu đồ dùng token riêng (`--chart-line`).
 
 ## Deploy lên GitHub Pages
 
@@ -159,8 +208,9 @@ Build thử y như CI ở local:
 ```bash
 python3 crawl_team_rank.py --slug team-rank-current
 python3 crawl_shishen_rank.py --slug shishen-rank-current
+python3 crawl_shishen_detail.py
 python3 build_report.py --data-links --output site/index.html
-cp out/team-rank-current.json out/team-rank-current.csv out/shishen-rank-current.json site/
+cp out/*.json out/*.csv site/
 python3 -m http.server -d site 8000        # mở http://localhost:8000
 ```
 
@@ -169,11 +219,16 @@ python3 -m http.server -d site 8000        # mở http://localhost:8000
 ```
 crawl_team_rank.py      # CLI crawl bảng đội hình
 crawl_shishen_rank.py   # CLI crawl bảng xếp hạng 式神
+crawl_shishen_detail.py # CLI crawl trend + đội hình theo 式神
+crawl_team_detail.py    # CLI chi tiết đội hình — CẦN hội viên basic
 build_report.py         # CLI dựng báo cáo HTML
 onmyoji/http.py         # GET JSON + retry + validate envelope
 onmyoji/assets.py       # map id -> tên 式神 / server
 onmyoji/team_rank.py    # TeamRankQuery (immutable) + phân trang
 onmyoji/shishen_rank.py # ShishenRankQuery + nhãn cột/tier/hiệu ứng bộ
+onmyoji/shishen_detail.py # ShishenDetailQuery: trend + teams
+onmyoji/team_detail.py  # /api/team/detail (cần basic)
+onmyoji/auth.py         # đọc token từ ONMYOJI_TOKEN hoặc .token, không bao giờ log
 onmyoji/output.py       # chuẩn hoá bản ghi, ghi JSON/CSV
 onmyoji/hanviet.py      # bảng ký tự Hán -> âm Hán-Việt (412 ký tự)
 onmyoji/translate.py    # dịch tên + bảng tên thông dụng

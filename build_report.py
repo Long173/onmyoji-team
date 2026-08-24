@@ -33,10 +33,12 @@ DEFAULT_OUTPUT = Path("report/meta-dau-ky.html")
 DEFAULT_AVATAR_DIR = Path("assets/avatars")
 DEFAULT_YUHUN_DIR = Path("assets/yuhun")
 DEFAULT_UNIT_INPUT = Path("out/shishen-rank-current.json")
+DEFAULT_DETAIL_INPUT = Path("out/shishen-detail-current.json")
 DATA_LINKS = (
     {"label": "đội hình JSON", "href": "team-rank-current.json"},
     {"label": "đội hình CSV", "href": "team-rank-current.csv"},
     {"label": "式神 JSON", "href": "shishen-rank-current.json"},
+    {"label": "trend JSON", "href": "shishen-detail-current.json"},
 )
 
 
@@ -51,6 +53,12 @@ def build_parser() -> argparse.ArgumentParser:
         type=Path,
         default=DEFAULT_UNIT_INPUT,
         help="file JSON của crawl_shishen_rank.py; thiếu thì báo cáo bỏ tab 式神",
+    )
+    parser.add_argument(
+        "--detail-input",
+        type=Path,
+        default=DEFAULT_DETAIL_INPUT,
+        help="file JSON của crawl_shishen_detail.py; thiếu thì bỏ sparkline và đội hình dưới ngưỡng",
     )
     parser.add_argument("--version-label", default="Phiên bản hiện hành", help="nhãn phiên bản trên masthead")
     parser.add_argument("--version-cn", default="", help="tên phiên bản tiếng Trung")
@@ -90,9 +98,29 @@ def main(argv: list[str] | None = None) -> int:
     else:
         print(f"Không thấy {args.unit_input} — báo cáo sẽ không có tab 式神.", file=sys.stderr)
 
+    unit_detail: dict | None = None
+    if args.detail_input.is_file():
+        try:
+            unit_detail = json.loads(args.detail_input.read_text(encoding="utf-8"))
+        except (OSError, json.JSONDecodeError) as exc:
+            print(f"Bỏ qua sparkline — không đọc được {args.detail_input}: {exc}", file=sys.stderr)
+            unit_detail = None
+    else:
+        print(f"Không thấy {args.detail_input} — bỏ sparkline và đội hình dưới ngưỡng.", file=sys.stderr)
+
     unit_rows = (unit_rank or {}).get("shishen") or []
+    hidden_ids = {
+        int(sid)
+        for entry in ((unit_detail or {}).get("details") or [])
+        for team in (entry.get("teams") or [])
+        for sid in (team.get("team") or [])
+    }
     shishen_ids = tuple(
-        sorted({stat.shishen_id for stat in stats} | set(referenced_shishen_ids(unit_rows)))
+        sorted(
+            {stat.shishen_id for stat in stats}
+            | set(referenced_shishen_ids(unit_rows))
+            | hidden_ids
+        )
     )
     yuhun_ids = referenced_yuhun_ids(unit_rows)
 
@@ -134,6 +162,7 @@ def main(argv: list[str] | None = None) -> int:
             generated_at=now_stamp(),
             data_links=DATA_LINKS if args.data_links else (),
             unit_rank=unit_rank,
+            unit_detail=unit_detail,
         )
         avatar_css = build_avatar_css(shishen_ids, args.avatar_dir)
         yuhun_css = build_yuhun_css(yuhun_ids, args.yuhun_dir)
