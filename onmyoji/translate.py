@@ -5,7 +5,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Mapping
 
-from .hanviet import CHAR_TO_HANVIET, PUNCTUATION_PASSTHROUGH
+from .hanviet import CHAR_TO_HANVIET, DIGIT_PASSTHROUGH, PUNCTUATION_PASSTHROUGH
 
 # Tên quen dùng trong cộng đồng (romaji Nhật hoặc tên bản quốc tế).
 # Chỉ khai những cái phổ biến chắc chắn; phần còn lại để trống và dùng Hán-Việt.
@@ -141,7 +141,9 @@ def unmapped_chars(chinese: str) -> tuple[str, ...]:
     return tuple(
         char
         for char in chinese
-        if char not in CHAR_TO_HANVIET and char not in PUNCTUATION_PASSTHROUGH
+        if char not in CHAR_TO_HANVIET
+        and char not in PUNCTUATION_PASSTHROUGH
+        and char not in DIGIT_PASSTHROUGH
     )
 
 

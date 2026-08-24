@@ -17,6 +17,8 @@ TEMPLATE_PATH = Path(__file__).resolve().parent.parent / "templates" / "report.h
 DATA_PLACEHOLDER = "__DATA__"
 AVATAR_PLACEHOLDER = "__AVATAR_CSS__"
 
+MIME_BY_SUFFIX = {".webp": "image/webp", ".png": "image/png", ".jpg": "image/jpeg"}
+
 
 class ReportError(RuntimeError):
     """Không dựng được báo cáo."""
@@ -67,18 +69,35 @@ def aggregate_shishen(teams: Sequence[Mapping[str, Any]]) -> tuple[ShishenStat, 
     return tuple(sorted(stats, key=lambda s: (-s.matches, s.shishen_id)))
 
 
-def build_avatar_css(shishen_ids: Sequence[int], avatar_dir: Path) -> str:
-    """Nhúng mỗi avatar đúng một lần thành class CSS `.a<id>`."""
-    rules: list[str] = []
-    for shishen_id in shishen_ids:
-        path = avatar_dir / f"{shishen_id}.webp"
-        if not path.is_file():
-            continue
-        encoded = base64.b64encode(path.read_bytes()).decode("ascii")
-        rules.append(f'.a{shishen_id}{{background-image:url("data:image/webp;base64,{encoded}")}}')
+def _image_rule(selector: str, path: Path) -> str:
+    mime = MIME_BY_SUFFIX.get(path.suffix.lower())
+    if mime is None:
+        raise ReportError(f"không rõ kiểu ảnh: {path}")
+    encoded = base64.b64encode(path.read_bytes()).decode("ascii")
+    return f'{selector}{{background-image:url("data:{mime};base64,{encoded}")}}'
 
+
+def build_avatar_css(shishen_ids: Sequence[int], avatar_dir: Path) -> str:
+    """Nhúng mỗi avatar 式神 đúng một lần thành class CSS `.a<id>`."""
+    rules = [
+        _image_rule(f".a{shishen_id}", avatar_dir / f"{shishen_id}.webp")
+        for shishen_id in shishen_ids
+        if (avatar_dir / f"{shishen_id}.webp").is_file()
+    ]
     if not rules:
         raise ReportError(f"không tìm thấy avatar nào trong {avatar_dir}")
+    return "\n".join(rules)
+
+
+def build_yuhun_css(yuhun_ids: Sequence[int], yuhun_dir: Path) -> str:
+    """Nhúng icon 御魂 thành class CSS `.y<id>`. Icon có thể là .webp hoặc .png."""
+    rules: list[str] = []
+    for yuhun_id in yuhun_ids:
+        for suffix in (".webp", ".png"):
+            path = yuhun_dir / f"{yuhun_id}{suffix}"
+            if path.is_file():
+                rules.append(_image_rule(f".y{yuhun_id}", path))
+                break
     return "\n".join(rules)
 
 
@@ -91,6 +110,7 @@ def build_payload(
     version_cn: str,
     generated_at: str,
     data_links: Sequence[Mapping[str, str]] = (),
+    unit_rank: Mapping[str, Any] | None = None,
 ) -> Mapping[str, Any]:
     """Gói dữ liệu mà template cần — thuần dữ liệu, không HTML."""
     teams = list(crawl.get("teams") or ())
@@ -136,6 +156,20 @@ def build_payload(
             for t in teams
         ],
         "shishen": [stat.as_dict() for stat in stats],
+        **_unit_section(unit_rank),
+    }
+
+
+def _unit_section(unit_rank: Mapping[str, Any] | None) -> Mapping[str, Any]:
+    """Phần dữ liệu cho tab 式神. Rỗng nếu chưa crawl bảng xếp hạng 式神."""
+    if not unit_rank:
+        return {"units": [], "unit_names": {}, "stats": {}, "yuhun": {}}
+
+    return {
+        "units": list(unit_rank.get("shishen") or ()),
+        "unit_names": dict(unit_rank.get("names") or {}),
+        "stats": dict(unit_rank.get("stats") or {}),
+        "yuhun": dict(unit_rank.get("yuhun") or {}),
     }
 
 

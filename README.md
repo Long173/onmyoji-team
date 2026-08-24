@@ -10,7 +10,10 @@ Site là SPA (Vue + Vite), toàn bộ dữ liệu đến từ REST API cùng dom
 | Endpoint | Dùng để |
 |---|---|
 | `GET /api/team/rank` | bảng阵容 của trang `#/query/team` |
+| `GET /api/shishen/rank` | xếp hạng 式神: tier, chọn/ban/thắng, ngự hồn thường dùng, counter |
 | `GET /api/asset/shishen` | map `shishen_id` → tên 式神 |
+| `GET /api/asset/shishen_stats` | chỉ số gốc của 273 式神 |
+| `GET /api/asset/yuhun` | 79 ngự hồn: tên, icon, hiệu ứng bộ |
 | `GET /api/asset/server` | map `server_id` → tên server |
 
 Envelope trả về: `{"success": bool, "data": ..., "error": str}`.
@@ -87,6 +90,44 @@ ký tự nào chưa có trong bảng sẽ được giữ nguyên và CLI in cả
 | 神启荒 | Thần Khải Hoang | Susanoo Kagura |
 | 不相狐禅 | Bất Tương Hồ Thiền | — |
 
+## Bảng xếp hạng 式神 (tier, chỉ số, ngự hồn)
+
+```bash
+python3 crawl_shishen_rank.py --slug shishen-rank-current
+```
+
+`/api/shishen/rank` **không phân trang** — trả toàn bộ 式神 đạt ngưỡng trong một lần gọi;
+field `total` là *số trận phân tích*, không phải số dòng. Tham số: `start_date`, `end_date`,
+`min_level`, `max_level`, `tag`, `ban`.
+
+Mỗi dòng: `tier` (0 mạnh nhất → 3), `tier_score`, `win_rate` (外战胜率), `pick_rate` (选用率),
+`ban_rate` (禁用率), `external_rate` (外战比例), `duration`, `avg_position` (选取次序),
+`most_used_yuhuns` (常用御魂 — 3 bộ hay dùng), `counter` (克制), `countered_by` (受制于).
+
+### Giới hạn quyền truy cập
+
+Đã kiểm tra thực tế từng endpoint:
+
+| Dữ liệu | Endpoint | Trạng thái |
+|---|---|---|
+| Chỉ số gốc 式神 | `/api/asset/shishen_stats` | mở |
+| Tên + icon ngự hồn | `/api/asset/yuhun` | mở |
+| 3 ngự hồn hay dùng / 式神 | `/api/shishen/rank` | mở |
+| Phân bố ngự hồn đầy đủ | `/api/shishen/detail` → `summary.yuhuns` | trả rỗng — cần hội viên `basic` |
+| Ngự hồn theo từng đội hình | `/api/team/yuhun` | `401 请登录后使用本功能` |
+| Chi tiết đội hình | `/api/team/detail` | `401` |
+| Counter chi tiết, advance rank, team-counter | `/api/shishen/counter_detail`, `/api/advance/rank`, `/api/team-counter/*` | `401` |
+
+⚠️ **Icon ngự hồn nằm trên CDN NetEase** (`ok.166.net`) và CDN đó trả `403` nếu request
+mang `Referer` trỏ về yysrank.win — vì vậy site đặt `referrerpolicy="no-referrer"` trên
+thẻ `<img>`. `onmyoji/avatars.py` bỏ header `Referer` cho URL ngoài (`EXTERNAL_HEADERS`).
+
+### Dịch tên ngự hồn
+
+Bảng Hán-Việt đã mở rộng lên **507 ký tự**, phủ 100% tên của cả 277 式神 và 79 ngự hồn:
+轮入道 → Luân Nhập Đạo, 火灵 → Hỏa Linh, 招财猫 → Chiêu Tài Miêu, 魍魉之匣 → Vọng Lượng Chi Hạp.
+Hiệu ứng bộ cũng dịch sang tiếng Việt (`AttackRate` → Tấn công, `CritPower` → Bạo sát…).
+
 ## Deploy lên GitHub Pages
 
 Workflow `.github/workflows/publish.yml` tự crawl lại rồi publish, chạy khi push vào `main`,
@@ -117,23 +158,26 @@ Build thử y như CI ở local:
 
 ```bash
 python3 crawl_team_rank.py --slug team-rank-current
+python3 crawl_shishen_rank.py --slug shishen-rank-current
 python3 build_report.py --data-links --output site/index.html
-cp out/team-rank-current.json out/team-rank-current.csv site/
+cp out/team-rank-current.json out/team-rank-current.csv out/shishen-rank-current.json site/
 python3 -m http.server -d site 8000        # mở http://localhost:8000
 ```
 
 ## Cấu trúc
 
 ```
-crawl_team_rank.py      # CLI crawl
+crawl_team_rank.py      # CLI crawl bảng đội hình
+crawl_shishen_rank.py   # CLI crawl bảng xếp hạng 式神
 build_report.py         # CLI dựng báo cáo HTML
 onmyoji/http.py         # GET JSON + retry + validate envelope
 onmyoji/assets.py       # map id -> tên 式神 / server
 onmyoji/team_rank.py    # TeamRankQuery (immutable) + phân trang
+onmyoji/shishen_rank.py # ShishenRankQuery + nhãn cột/tier/hiệu ứng bộ
 onmyoji/output.py       # chuẩn hoá bản ghi, ghi JSON/CSV
 onmyoji/hanviet.py      # bảng ký tự Hán -> âm Hán-Việt (412 ký tự)
 onmyoji/translate.py    # dịch tên + bảng tên thông dụng
-onmyoji/avatars.py      # tải & cache avatar
+onmyoji/avatars.py      # tải & cache avatar 式神 + icon ngự hồn
 onmyoji/report.py       # gộp thống kê, nhúng avatar, render template
 templates/report.html   # template báo cáo (CSS + JS render phía client)
 ```

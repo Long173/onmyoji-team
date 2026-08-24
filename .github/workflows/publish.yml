@@ -27,14 +27,19 @@ jobs:
         with:
           python-version: "3.12"
 
-      - name: Cache avatar 式神
+      - name: Cache ảnh 式神 và ngự hồn
         uses: actions/cache@v4
         with:
-          path: assets/avatars
-          key: shishen-avatars-v1
+          path: |
+            assets/avatars
+            assets/yuhun
+          key: onmyoji-images-v2
 
       - name: Crawl bảng đội hình
         run: python3 crawl_team_rank.py --slug team-rank-current
+
+      - name: Crawl bảng xếp hạng 式神
+        run: python3 crawl_shishen_rank.py --slug shishen-rank-current
 
       - name: Dựng báo cáo
         run: |
@@ -44,7 +49,9 @@ jobs:
             --output site/index.html
 
       - name: Kèm dữ liệu thô để tải về
-        run: cp out/team-rank-current.json out/team-rank-current.csv site/
+        run: |
+          cp out/team-rank-current.json out/team-rank-current.csv site/
+          cp out/shishen-rank-current.json site/
 
       - uses: actions/configure-pages@v5
 

@@ -460,6 +460,166 @@ td.common { color: var(--muted); font-style: italic; }
 td.num { font-family: var(--f-data); font-size: 12px; color: var(--muted); font-variant-numeric: tabular-nums; text-align: right; }
 td.pic { width: 46px; }
 
+/* ---------- tab nav ---------- */
+
+.tabs {
+  display: flex;
+  gap: 26px;
+  border-bottom: 1px solid var(--hairline);
+  margin-top: 34px;
+}
+
+.tabs button {
+  appearance: none;
+  background: none;
+  border: none;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -1px;
+  padding: 11px 2px;
+  cursor: pointer;
+  font-family: var(--f-body);
+  font-size: 14.5px;
+  font-weight: 500;
+  color: var(--muted);
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+}
+
+.tabs button:hover { color: var(--ink-soft); }
+
+.tabs button[aria-selected="true"] {
+  color: var(--ink);
+  border-bottom-color: var(--gold);
+}
+
+.tabs button .cn { font-family: var(--f-cjk); font-size: 12px; color: var(--gold); }
+
+.tab-panel[hidden] { display: none; }
+
+/* ---------- bang 式神 ---------- */
+
+.unit-card {
+  display: grid;
+  grid-template-columns: 62px minmax(160px, 1.1fr) 168px minmax(150px, 1fr) minmax(140px, 0.9fr);
+  gap: 18px;
+  align-items: center;
+  padding: 15px 4px;
+  border-bottom: 1px solid var(--hairline-soft);
+}
+
+.unit-card:hover { background: var(--surface); }
+
+.face { position: relative; width: 52px; }
+
+.tier-badge {
+  position: absolute;
+  bottom: -3px;
+  right: -5px;
+  font-family: var(--f-data);
+  font-size: 10px;
+  font-weight: 500;
+  line-height: 1;
+  padding: 2px 4px;
+  border-radius: 2px;
+  color: #fff;
+  border: 1px solid var(--ground);
+}
+
+.tier-0 { background: #2f6fd0; }
+.tier-1 { background: #2c8a5f; }
+.tier-2 { background: #a8791b; }
+.tier-3 { background: #6b7180; }
+
+.identity { display: flex; flex-direction: column; gap: 1px; min-width: 0; }
+.identity .vn { font-weight: 500; font-size: 14.5px; }
+.identity .cn { font-family: var(--f-cjk); font-size: 12px; color: var(--muted); }
+.identity .common { font-size: 11.5px; color: var(--muted); font-style: italic; }
+
+.rates {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 2px 9px;
+  font-family: var(--f-data);
+  font-size: 11.5px;
+  font-variant-numeric: tabular-nums;
+  color: var(--muted);
+}
+
+.rates b { color: var(--ink-soft); font-weight: 500; }
+.rates .win b { color: var(--jade); }
+.rates .ban b { color: var(--plum); }
+
+.statgrid {
+  display: grid;
+  grid-template-columns: repeat(2, auto);
+  gap: 1px 14px;
+  font-family: var(--f-data);
+  font-size: 11.5px;
+  font-variant-numeric: tabular-nums;
+  color: var(--muted);
+}
+
+.statgrid b { color: var(--ink-soft); font-weight: 500; }
+
+.icon-row { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; }
+
+.yh {
+  width: 34px;
+  height: 34px;
+  border-radius: 4px;
+  background-color: var(--surface-2);
+  background-size: cover;
+  background-position: center;
+  border: 1px solid var(--hairline);
+  flex: none;
+}
+
+.matchup { display: flex; flex-direction: column; gap: 7px; }
+
+.matchup .line {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-family: var(--f-data);
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.matchup .line .tag { width: 26px; flex: none; }
+.matchup .line.beats .tag { color: var(--jade); }
+.matchup .line.loses .tag { color: var(--plum); }
+
+.legend {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
+  gap: 1px;
+  background: var(--hairline-soft);
+  border-top: 1px solid var(--hairline-soft);
+  border-bottom: 1px solid var(--hairline-soft);
+}
+
+.legend-item {
+  background: var(--ground);
+  padding: 11px 14px;
+  display: grid;
+  grid-template-columns: 34px minmax(0, 1fr);
+  gap: 11px;
+  align-items: center;
+}
+
+.legend-item .vn { font-weight: 500; font-size: 13px; }
+.legend-item .cn { font-family: var(--f-cjk); font-size: 11.5px; color: var(--muted); }
+.legend-item .suit { font-size: 11px; color: var(--gold); font-family: var(--f-data); }
+
+@media (max-width: 1000px) {
+  .unit-card { grid-template-columns: 62px minmax(0, 1fr); }
+  .rates, .statgrid, .matchup { grid-column: 1 / -1; }
+  .matchup { flex-direction: row; flex-wrap: wrap; gap: 14px; }
+}
+
 /* ---------- footer ---------- */
 
 footer {
@@ -514,6 +674,16 @@ __AVATAR_CSS__
 
   <dl class="figures" id="figures"></dl>
 
+  <nav class="tabs" role="tablist" aria-label="Phần của báo cáo">
+    <button type="button" role="tab" id="tab-teams" aria-controls="panel-teams" aria-selected="true">
+      Đội hình <span class="cn">阵容</span>
+    </button>
+    <button type="button" role="tab" id="tab-units" aria-controls="panel-units" aria-selected="false">
+      式神 <span class="cn">式神排行</span>
+    </button>
+  </nav>
+
+<div class="tab-panel" id="panel-teams" role="tabpanel" aria-labelledby="tab-teams">
   <section class="block">
     <div class="block-head">
       <h2>Sổ đội hình</h2>
@@ -551,9 +721,54 @@ __AVATAR_CSS__
     <ol class="ledger" id="ledger"></ol>
   </section>
 
+</div><!-- /panel-teams -->
+
+<div class="tab-panel" id="panel-units" role="tabpanel" aria-labelledby="tab-units" hidden>
   <section class="block">
     <div class="block-head">
-      <h2>式神 trong meta</h2>
+      <h2>Xếp hạng 式神</h2>
+      <span class="cn">式神排行</span>
+    </div>
+    <p class="block-note">
+      Tier do site tự tính (<b>T0</b> mạnh nhất). Chỉ số là <b>chỉ số gốc</b> của 式神, chưa tính ngự hồn.
+      Ngự hồn là <b>3 bộ hay dùng nhất</b> theo thứ tự — số liệu chi tiết hơn bị site khoá sau hội viên.
+      Cột cuối là 式神 mà nó khắc chế và bị khắc chế.
+    </p>
+    <div class="controls">
+      <div class="field">
+        <label for="uq">Tìm 式神 / ngự hồn</label>
+        <input id="uq" type="search" placeholder="Cát Diệp, 葛叶, Luân Nhập Đạo…" autocomplete="off">
+      </div>
+      <div class="field">
+        <label for="usort">Sắp xếp</label>
+        <select id="usort">
+          <option value="tier_score">Tier</option>
+          <option value="pick_rate">Tỉ lệ chọn</option>
+          <option value="ban_rate">Tỉ lệ ban</option>
+          <option value="win_rate">Tỉ lệ thắng</option>
+          <option value="avg_position">Thứ tự chọn</option>
+          <option value="duration">Thời lượng</option>
+        </select>
+      </div>
+      <div class="result-count" id="ucount">—</div>
+    </div>
+    <div id="units"></div>
+  </section>
+
+  <section class="block">
+    <div class="block-head">
+      <h2>Ngự hồn xuất hiện</h2>
+      <span class="cn">御魂</span>
+    </div>
+    <p class="block-note">
+      Các bộ ngự hồn được nhắc tới ở bảng trên, kèm hiệu ứng bộ 4 món.
+    </p>
+    <div class="legend" id="yuhun-legend"></div>
+  </section>
+
+  <section class="block">
+    <div class="block-head">
+      <h2>式神 trong meta đội hình</h2>
       <span class="cn">式神热度</span>
     </div>
     <p class="block-note">
@@ -590,6 +805,8 @@ __AVATAR_CSS__
       </table>
     </div>
   </section>
+
+</div><!-- /panel-units -->
 
   <footer>
     <span id="foot-meta">—</span>
@@ -759,6 +976,152 @@ __AVATAR_CSS__
     render();
   });
   render();
+
+  /* ---------- tab nav ---------- */
+
+  var TABS = [
+    { button: "tab-teams", panel: "panel-teams" },
+    { button: "tab-units", panel: "panel-units" }
+  ];
+
+  function selectTab(activeId) {
+    TABS.forEach(function (t) {
+      var isActive = t.button === activeId;
+      var button = document.getElementById(t.button);
+      var panel = document.getElementById(t.panel);
+      button.setAttribute("aria-selected", isActive ? "true" : "false");
+      panel.hidden = !isActive;
+    });
+  }
+
+  TABS.forEach(function (t) {
+    document.getElementById(t.button).addEventListener("click", function () {
+      selectTab(t.button);
+    });
+  });
+
+  /* ---------- xep hang 式神 ---------- */
+
+  var UNITS = DATA.units || [];
+  var UNIT_NAMES = DATA.unit_names || {};
+  var STATS = DATA.stats || {};
+  var YUHUN = DATA.yuhun || {};
+
+  var STAT_ORDER = [
+    { key: "Attack", label: "Công" },
+    { key: "Hp", label: "HP" },
+    { key: "Defense", label: "Phòng" },
+    { key: "Speed", label: "Tốc" }
+  ];
+
+  function unitName(id) {
+    return UNIT_NAMES[id] || NAMES[id] || { vn: "#" + id, cn: "", common: "" };
+  }
+
+  function yuhunOf(id) {
+    return YUHUN[id] || { vn: "#" + id, cn: "", suit_type: "" };
+  }
+
+  function faceRow(ids) {
+    if (!ids || !ids.length) return '<span class="small">—</span>';
+    return ids.map(function (id) {
+      var n = unitName(id);
+      return '<span class="av sm a' + id + '" role="img" aria-label="' + n.vn +
+        '" title="' + n.cn + " · " + n.vn + '"></span>';
+    }).join("");
+  }
+
+  function unitCard(u) {
+    var n = unitName(u.shishen_id);
+    var st = STATS[u.shishen_id] || {};
+    var tier = u.tier == null ? 3 : u.tier;
+
+    var yuhuns = (u.most_used_yuhuns || []).map(function (yid) {
+      var y = yuhunOf(yid);
+      var suit = y.suit_type ? " — " + y.suit_type : "";
+      return '<span class="yh y' + yid + '" role="img" aria-label="' + y.vn +
+        '" title="' + y.cn + " · " + y.vn + suit + '"></span>';
+    }).join("");
+
+    var stats = STAT_ORDER.filter(function (sp) { return st[sp.key] != null; }).map(function (sp) {
+      return "<span>" + sp.label + " <b>" + intFmt.format(Math.round(st[sp.key])) + "</b></span>";
+    }).join("");
+
+    return '<div class="unit-card">' +
+      '<div class="face"><span class="av lg a' + u.shishen_id + '" role="img" aria-label="' + n.vn + '"></span>' +
+        '<span class="tier-badge tier-' + tier + '">T' + tier + "</span></div>" +
+      '<div class="identity"><span class="vn">' + n.vn + "</span>" +
+        '<span class="cn">' + n.cn + "</span>" +
+        (n.common ? '<span class="common">' + n.common + "</span>" : "") + "</div>" +
+      '<div class="rates">' +
+        '<span class="win">thắng <b>' + pct(u.win_rate, 1) + "</b></span>" +
+        "<span>chọn <b>" + pct(u.pick_rate, 1) + "</b></span>" +
+        '<span class="ban">ban <b>' + pct(u.ban_rate, 1) + "</b></span>" +
+        "<span>lượt <b>" + (u.avg_position == null ? "—" : u.avg_position.toFixed(2)) + "</b></span>" +
+      "</div>" +
+      '<div class="statgrid">' + stats +
+        "<span>ngoại chiến <b>" + pct(u.external_rate, 0) + "</b></span>" +
+        "<span>thời lượng <b>" + Math.round(u.duration) + "s</b></span></div>" +
+      '<div class="matchup">' +
+        '<div class="line beats"><span class="tag">Khắc</span><span class="icon-row">' + faceRow(u.counter) + "</span></div>" +
+        '<div class="line loses"><span class="tag">Bị</span><span class="icon-row">' + faceRow(u.countered_by) + "</span></div>" +
+        '<div class="line"><span class="tag">御魂</span><span class="icon-row">' + (yuhuns || "—") + "</span></div>" +
+      "</div></div>";
+  }
+
+  var unitsEl = document.getElementById("units");
+  var uqEl = document.getElementById("uq");
+  var usortEl = document.getElementById("usort");
+  var ucountEl = document.getElementById("ucount");
+
+  function unitMatches(u, needle) {
+    if (!needle) return true;
+    var n = unitName(u.shishen_id);
+    var hay = n.vn + " " + n.cn + " " + n.common + " " + u.shishen_id;
+    (u.most_used_yuhuns || []).forEach(function (yid) {
+      var y = yuhunOf(yid);
+      hay += " " + y.vn + " " + y.cn;
+    });
+    return hay.toLowerCase().indexOf(needle) !== -1;
+  }
+
+  function renderUnits() {
+    var needle = uqEl.value.trim().toLowerCase();
+    var key = usortEl.value;
+    var ascending = key === "avg_position";
+
+    var rows = UNITS.filter(function (u) { return unitMatches(u, needle); })
+      .slice()
+      .sort(function (a, b) {
+        var av = a[key] == null ? 0 : a[key];
+        var bv = b[key] == null ? 0 : b[key];
+        return ascending ? av - bv : bv - av;
+      });
+
+    ucountEl.textContent = rows.length + " / " + UNITS.length + " 式神";
+    unitsEl.innerHTML = rows.length
+      ? rows.map(unitCard).join("")
+      : '<div class="empty">Không có 式神 nào khớp bộ lọc.</div>';
+  }
+
+  if (UNITS.length) {
+    uqEl.addEventListener("input", renderUnits);
+    usortEl.addEventListener("change", renderUnits);
+    renderUnits();
+
+    document.getElementById("yuhun-legend").innerHTML = Object.keys(YUHUN)
+      .sort(function (a, b) { return Number(a) - Number(b); })
+      .map(function (yid) {
+        var y = YUHUN[yid];
+        return '<div class="legend-item">' +
+          '<span class="yh y' + yid + '" role="img" aria-label="' + y.vn + '"></span>' +
+          '<span class="identity"><span class="vn">' + y.vn + "</span>" +
+            '<span class="cn">' + y.cn + "</span>" +
+            '<span class="suit">' + (y.suit_type || "—") + "</span></span></div>";
+      }).join("");
+  } else {
+    document.getElementById("tab-units").hidden = true;
+  }
 
   /* ---------- shishen board ---------- */
 
