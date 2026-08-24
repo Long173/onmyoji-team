@@ -118,19 +118,19 @@ def main(argv: list[str] | None = None) -> int:
             for sid, n in names.items()
             if sid in referenced_shishen_ids(rank.rows)
         },
+        # Xuất TẤT CẢ ngự hồn (chỉ ~79 dòng text) chứ không riêng cái được tham chiếu:
+        # /api/shishen/detail của hội viên basic nhắc tới nhiều bộ hơn most_used_yuhuns.
         "yuhun": {
             str(yid): {
-                "vn": to_hanviet(yuhun_map[yid]["name"]),
-                "cn": yuhun_map[yid]["name"],
-                "suit_type": SUIT_TYPE_LABELS.get(
-                    yuhun_map[yid]["suit_type"], yuhun_map[yid]["suit_type"]
-                ),
-                "suit_type_raw": yuhun_map[yid]["suit_type"],
-                "icon": yuhun_map[yid]["icon"],
+                "vn": to_hanviet(meta["name"]),
+                "cn": meta["name"],
+                "suit_type": SUIT_TYPE_LABELS.get(meta["suit_type"], meta["suit_type"]),
+                "suit_type_raw": meta["suit_type"],
+                "icon": meta["icon"],
             }
-            for yid in referenced_yuhun_ids(rank.rows)
-            if yid in yuhun_map
+            for yid, meta in sorted(yuhun_map.items())
         },
+        "yuhun_most_used": list(referenced_yuhun_ids(rank.rows)),
     }
 
     args.out_dir.mkdir(parents=True, exist_ok=True)

@@ -112,6 +112,7 @@ def build_payload(
     data_links: Sequence[Mapping[str, str]] = (),
     unit_rank: Mapping[str, Any] | None = None,
     unit_detail: Mapping[str, Any] | None = None,
+    include_paid: bool = False,
 ) -> Mapping[str, Any]:
     """Gói dữ liệu mà template cần — thuần dữ liệu, không HTML."""
     teams = list(crawl.get("teams") or ())
@@ -159,6 +160,7 @@ def build_payload(
         "shishen": [stat.as_dict() for stat in stats],
         **_unit_section(unit_rank),
         **_detail_section(unit_detail, teams),
+        **_paid_section(unit_detail, unit_rank, include_paid),
     }
 
 
@@ -289,3 +291,107 @@ def _detail_section(
         "trend": _trend_payload(details),
         "hidden": _hidden_teams(details, ranked_teams),
     }
+
+
+# Ngưỡng số trận để một dòng ngự hồn / ghép cặp được coi là có ý nghĩa.
+# Median toàn bộ chỉ 7 trận nên phần lớn dòng là nhiễu.
+MIN_YUHUN_MATCHES = 100
+MIN_PAIR_MATCHES = 300
+TOP_PAIRS = 6
+MIN_POSITION_MATCHES = 50
+
+
+def _paid_rows(
+    entry: Mapping[str, Any],
+    baseline: float,
+) -> Mapping[str, Any]:
+    """Lọc nhiễu và tính chênh lệch so với tỉ lệ thắng chung của 式神 đó."""
+
+    def keep(rows, key, floor):
+        picked = [r for r in rows if int(r.get("total") or 0) >= floor]
+        return sorted(picked, key=lambda r: -float(r.get("win_rate") or 0.0))
+
+    yuhuns = [
+        {
+            "yuhun_id": int(r["yuhun_id"]),
+            "total": int(r["total"]),
+            "win_rate": float(r["win_rate"]),
+            "delta": float(r["win_rate"]) - baseline,
+        }
+        for r in keep(entry.get("yuhuns") or (), "yuhun_id", MIN_YUHUN_MATCHES)
+    ]
+
+    def pair(key):
+        return [
+            {
+                "shishen_id": int(r["shishen_id"]),
+                "total": int(r["total"]),
+                "win_rate": float(r["win_rate"]),
+                "delta": float(r["win_rate"]) - baseline,
+            }
+            for r in keep(entry.get(key) or (), "shishen_id", MIN_PAIR_MATCHES)[:TOP_PAIRS]
+        ]
+
+    positions = sorted(
+        (
+            {
+                "position": int(r["position"]),
+                "total": int(r["total"]),
+                "win_rate": float(r["win_rate"]),
+            }
+            for r in (entry.get("positions") or ())
+            if int(r.get("total") or 0) >= MIN_POSITION_MATCHES
+        ),
+        key=lambda r: r["position"],
+    )
+
+    return {
+        "baseline": baseline,
+        "yuhuns": yuhuns,
+        "synergies": pair("synergies"),
+        "counters": pair("counters"),
+        "positions": positions,
+    }
+
+
+def _paid_section(
+    unit_detail: Mapping[str, Any] | None,
+    unit_rank: Mapping[str, Any] | None,
+    include_paid: bool,
+) -> Mapping[str, Any]:
+    """Dữ liệu chỉ hội viên `basic` mới có. Rỗng khi không bật `include_paid`.
+
+    Đây là nội dung sau tường phí của yysrank.win — mặc định KHÔNG đưa vào bản
+    build để publish công khai.
+    """
+    details = (unit_detail or {}).get("details") or []
+    if not include_paid or not details:
+        return {"paid": {}, "yuhun_all": {}}
+
+    baselines = {
+        int(row["shishen_id"]): float(row.get("win_rate") or 0.0)
+        for row in ((unit_rank or {}).get("shishen") or ())
+    }
+
+    paid = {}
+    for entry in details:
+        shishen_id = int(entry["shishen_id"])
+        rows = _paid_rows(entry, baselines.get(shishen_id, 0.0))
+        if rows["yuhuns"] or rows["synergies"] or rows["counters"]:
+            paid[str(shishen_id)] = rows
+
+    return {
+        "paid": {
+            "units": paid,
+            "min_yuhun_matches": MIN_YUHUN_MATCHES,
+            "min_pair_matches": MIN_PAIR_MATCHES,
+        },
+        "yuhun_all": dict((unit_rank or {}).get("yuhun") or {}),
+    }
+
+
+def paid_yuhun_ids(payload: Mapping[str, Any]) -> tuple[int, ...]:
+    """Các yuhun_id cần icon cho phần dữ liệu hội viên."""
+    units = ((payload.get("paid") or {}).get("units")) or {}
+    found = {int(row["yuhun_id"]) for unit in units.values() for row in unit.get("yuhuns") or ()}
+    return tuple(sorted(found))

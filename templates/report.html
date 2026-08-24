@@ -21,6 +21,7 @@
   /* Mark biểu đồ: bước màu riêng, đã qua validate_palette.js (chroma floor + contrast) */
   --chart-line: #00805f;
   --chart-ref: #b3b8c6;
+  --chart-neg: #a65a18;
 
   --f-display: "Source Serif 4", "Iowan Old Style", Georgia, serif;
   --f-body: "Be Vietnam Pro", "Segoe UI", system-ui, sans-serif;
@@ -48,6 +49,7 @@
     --meter-track: #262a35;
     --chart-line: #2fa588;
     --chart-ref: #3a3f4d;
+    --chart-neg: #c97a3c;
   }
 }
 
@@ -67,6 +69,7 @@
   --meter-track: #262a35;
   --chart-line: #2fa588;
   --chart-ref: #3a3f4d;
+  --chart-neg: #c97a3c;
 }
 
 * { box-sizing: border-box; }
@@ -515,6 +518,155 @@ td.pic { width: 46px; }
 #spark-tip.show { opacity: 1; }
 #spark-tip b { color: var(--chart-line); font-weight: 500; }
 
+/* ---------- panel du lieu hoi vien ---------- */
+
+.detail-toggle {
+  appearance: none;
+  background: var(--surface);
+  border: 1px solid var(--hairline);
+  border-radius: 2px;
+  color: var(--ink-soft);
+  cursor: pointer;
+  font-family: var(--f-data);
+  font-size: 10.5px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  padding: 5px 9px;
+  white-space: nowrap;
+}
+
+.detail-toggle:hover { color: var(--ink); border-color: var(--muted); }
+.detail-toggle[aria-expanded="true"] { background: var(--surface-2); color: var(--ink); border-color: var(--gold); }
+
+.detail-panel {
+  grid-column: 1 / -1;
+  display: grid;
+  grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr);
+  gap: 26px;
+  padding: 18px 4px 6px;
+  border-top: 1px dashed var(--hairline);
+  margin-top: 12px;
+}
+
+.detail-panel[hidden] { display: none; }
+
+.panel-block h4 {
+  font-family: var(--f-data);
+  font-size: 10px;
+  letter-spacing: 0.13em;
+  text-transform: uppercase;
+  color: var(--muted);
+  font-weight: 400;
+  margin: 0 0 9px;
+}
+
+.panel-block + .panel-block { margin-top: 20px; }
+
+.yh-row {
+  display: grid;
+  grid-template-columns: 30px minmax(0, 1fr) 54px 96px 62px;
+  gap: 10px;
+  align-items: center;
+  padding: 4px 0;
+  font-family: var(--f-data);
+  font-size: 11.5px;
+  font-variant-numeric: tabular-nums;
+  color: var(--muted);
+}
+
+.yh-row .nm { font-family: var(--f-body); font-size: 12.5px; color: var(--ink-soft); overflow-wrap: anywhere; }
+.yh-row .wr { text-align: right; color: var(--ink-soft); }
+.yh-row .mt { text-align: right; }
+
+/* Thanh chênh lệch: gốc ở giữa, phải = trên trung bình, trái = dưới.
+   Dấu được mã hoá bằng CẢ hướng và nhãn số có dấu, không chỉ bằng màu. */
+.delta {
+  position: relative;
+  height: 14px;
+  display: flex;
+  align-items: center;
+}
+
+.delta::before {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: 1px;
+  bottom: 1px;
+  width: 1px;
+  background: var(--chart-ref);
+}
+
+.delta i {
+  position: absolute;
+  height: 6px;
+  border-radius: 1px;
+  background: var(--chart-line);
+}
+
+.delta i.neg { background: var(--chart-neg); }
+
+.delta b {
+  position: absolute;
+  right: 0;
+  font-size: 10.5px;
+  font-weight: 500;
+  color: var(--ink-soft);
+  background: linear-gradient(90deg, transparent, var(--ground) 40%);
+  padding-left: 8px;
+}
+
+.pair-row {
+  display: grid;
+  grid-template-columns: 34px minmax(0, 1fr) 52px 60px;
+  gap: 9px;
+  align-items: center;
+  padding: 3px 0;
+  font-family: var(--f-data);
+  font-size: 11.5px;
+  font-variant-numeric: tabular-nums;
+  color: var(--muted);
+}
+
+.pair-row .nm { font-family: var(--f-body); font-size: 12.5px; color: var(--ink-soft); }
+.pair-row .wr { text-align: right; color: var(--ink-soft); }
+.pair-row .mt { text-align: right; }
+
+.pos-row {
+  display: grid;
+  grid-template-columns: 46px minmax(0, 1fr) 48px 58px;
+  gap: 9px;
+  align-items: center;
+  padding: 3px 0;
+  font-family: var(--f-data);
+  font-size: 11.5px;
+  font-variant-numeric: tabular-nums;
+  color: var(--muted);
+}
+
+.pos-row .bar { height: 5px; background: var(--meter-track); border-radius: 3px; overflow: hidden; }
+.pos-row .bar > i { display: block; height: 100%; background: var(--jade-dim); border-radius: 3px; }
+.pos-row .wr { text-align: right; color: var(--ink-soft); }
+.pos-row .mt { text-align: right; }
+
+.paid-banner {
+  border: 1px solid var(--gold);
+  border-radius: 3px;
+  background: var(--surface);
+  padding: 12px 15px;
+  margin: 0 0 22px;
+  font-size: 13px;
+  color: var(--ink-soft);
+  max-width: var(--measure);
+}
+
+.paid-banner strong { color: var(--ink); }
+
+@media (max-width: 900px) {
+  .detail-panel { grid-template-columns: minmax(0, 1fr); gap: 20px; }
+  .yh-row { grid-template-columns: 26px minmax(0, 1fr) 48px 74px 54px; }
+}
+
 /* ---------- doi hinh an ---------- */
 
 .hidden-note {
@@ -826,6 +978,7 @@ __AVATAR_CSS__
       </div>
       <div class="result-count" id="ucount">—</div>
     </div>
+    <p class="paid-banner" id="paid-banner" hidden></p>
     <div id="units"></div>
   </section>
 
@@ -1260,7 +1413,111 @@ __AVATAR_CSS__
         '<div class="line beats"><span class="tag">Khắc</span><span class="icon-row">' + faceRow(u.counter) + "</span></div>" +
         '<div class="line loses"><span class="tag">Bị</span><span class="icon-row">' + faceRow(u.countered_by) + "</span></div>" +
         '<div class="line"><span class="tag">御魂</span><span class="icon-row">' + (yuhuns || "—") + "</span></div>" +
-      "</div></div>";
+        (PAID[String(u.shishen_id)]
+          ? '<button type="button" class="detail-toggle" aria-expanded="false">Chi tiết</button>'
+          : "") +
+      "</div>" +
+      detailPanel(u.shishen_id) +
+      "</div>";
+  }
+
+  /* ---------- panel du lieu hoi vien (basic) ---------- */
+
+  var PAID = (DATA.paid && DATA.paid.units) || {};
+  var PAID_META = DATA.paid || {};
+  var YUHUN_ALL = DATA.yuhun_all || {};
+  var HAS_PAID = Object.keys(PAID).length > 0;
+
+  // Thang thanh chenh lech: lay tu du lieu, chung cho moi 式神 nen so sanh duoc.
+  var DELTA_MAX = (function () {
+    var top = 0.05;
+    Object.keys(PAID).forEach(function (sid) {
+      (PAID[sid].yuhuns || []).forEach(function (r) {
+        top = Math.max(top, Math.abs(r.delta));
+      });
+    });
+    return top;
+  })();
+
+  function yuhunMeta(id) {
+    return YUHUN_ALL[id] || YUHUN[id] || { vn: "#" + id, cn: "", suit_type: "" };
+  }
+
+  function deltaBar(delta) {
+    var frac = Math.min(1, Math.abs(delta) / DELTA_MAX);
+    var half = frac * 50;
+    var negative = delta < 0;
+    var style = negative
+      ? "right:50%;width:" + half.toFixed(1) + "%"
+      : "left:50%;width:" + half.toFixed(1) + "%";
+    var signed = (delta >= 0 ? "+" : "−") + Math.abs(100 * delta).toFixed(1) + "đ";
+    return '<span class="delta"><i class="' + (negative ? "neg" : "pos") + '" style="' + style + '"></i>' +
+      "<b>" + signed + "</b></span>";
+  }
+
+  function detailPanel(shishenId) {
+    var paid = PAID[String(shishenId)];
+    if (!paid) return "";
+
+    var yuhunRows = (paid.yuhuns || []).map(function (r) {
+      var y = yuhunMeta(String(r.yuhun_id));
+      var suit = y.suit_type ? " — " + y.suit_type : "";
+      return '<div class="yh-row">' +
+        '<span class="yh y' + r.yuhun_id + '" role="img" aria-label="' + y.vn + '" title="' + y.cn + suit + '"></span>' +
+        '<span class="nm">' + y.vn + "</span>" +
+        '<span class="wr">' + pct(r.win_rate, 1) + "</span>" +
+        deltaBar(r.delta) +
+        '<span class="mt">' + intFmt.format(r.total) + "</span></div>";
+    }).join("");
+
+    function pairRows(rows) {
+      return rows.map(function (r) {
+        var n = unitName(r.shishen_id);
+        return '<div class="pair-row">' +
+          '<span class="av sm a' + r.shishen_id + '" role="img" aria-label="' + n.vn + '"></span>' +
+          '<span class="nm">' + n.vn + "</span>" +
+          '<span class="wr">' + pct(r.win_rate, 1) + "</span>" +
+          '<span class="mt">' + intFmt.format(r.total) + "</span></div>";
+      }).join("");
+    }
+
+    var posRows = (paid.positions || []).map(function (r) {
+      var width = Math.max(2, Math.min(100, ((r.win_rate - 0.35) / (0.65 - 0.35)) * 100));
+      return '<div class="pos-row"><span>lượt ' + r.position + "</span>" +
+        '<span class="bar"><i style="width:' + width.toFixed(1) + '%"></i></span>' +
+        '<span class="wr">' + pct(r.win_rate, 1) + "</span>" +
+        '<span class="mt">' + intFmt.format(r.total) + "</span></div>";
+    }).join("");
+
+    var right = "";
+    if (paid.synergies && paid.synergies.length) {
+      right += '<div class="panel-block"><h4>Đi cùng · 协同 (≥' +
+        intFmt.format(PAID_META.min_pair_matches || 300) + " trận)</h4>" + pairRows(paid.synergies) + "</div>";
+    }
+    if (paid.counters && paid.counters.length) {
+      right += '<div class="panel-block"><h4>Thắng khi gặp · 克制</h4>' + pairRows(paid.counters) + "</div>";
+    }
+    if (posRows) {
+      right += '<div class="panel-block"><h4>Theo lượt chọn · 选取次序</h4>' + posRows + "</div>";
+    }
+
+    return '<div class="detail-panel" hidden>' +
+      '<div class="panel-block"><h4>Ngự hồn · 御魂 (≥' +
+        intFmt.format(PAID_META.min_yuhun_matches || 100) + " trận, so với trung bình " +
+        pct(paid.baseline, 1) + ")</h4>" + (yuhunRows || '<span class="mt">—</span>') + "</div>" +
+      "<div>" + right + "</div></div>";
+  }
+
+  function toggleDetail(event) {
+    var button = event.target.closest(".detail-toggle");
+    if (!button) return;
+    var card = button.closest(".unit-card");
+    var panel = card && card.querySelector(".detail-panel");
+    if (!panel) return;
+    var open = button.getAttribute("aria-expanded") === "true";
+    button.setAttribute("aria-expanded", open ? "false" : "true");
+    button.textContent = open ? "Chi tiết" : "Đóng";
+    panel.hidden = open;
   }
 
   var unitsEl = document.getElementById("units");
@@ -1303,6 +1560,17 @@ __AVATAR_CSS__
     usortEl.addEventListener("change", renderUnits);
     unitsEl.addEventListener("pointermove", sparkHover);
     unitsEl.addEventListener("pointerleave", sparkLeave);
+    unitsEl.addEventListener("click", toggleDetail);
+    if (HAS_PAID) {
+      var banner = document.getElementById("paid-banner");
+      banner.innerHTML = "<strong>Bấm <em>Chi tiết</em></strong> ở mỗi 式神 để xem ngự hồn theo tỉ lệ thắng, " +
+        "式神 đi cùng / gặp phải, và hiệu quả theo lượt chọn. " +
+        "Phần này lấy từ tài khoản hội viên <code>basic</code> của yysrank.win. " +
+        "Ngự hồn lọc từ " + intFmt.format(PAID_META.min_yuhun_matches || 100) +
+        " trận, ghép cặp từ " + intFmt.format(PAID_META.min_pair_matches || 300) +
+        " trận — dưới mức đó dữ liệu quá ít để tin (median toàn bộ chỉ 7 trận/bộ).";
+      banner.hidden = false;
+    }
     renderUnits();
 
     document.getElementById("yuhun-legend").innerHTML = Object.keys(YUHUN)

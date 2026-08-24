@@ -1,7 +1,10 @@
 #!/usr/bin/env python3
 """CLI crawl `trend` và `summary.teams` cho từng 式神 (`/api/shishen/detail`).
 
-Endpoint mở, không cần token. Lấy danh sách 式神 từ file của crawl_shishen_rank.py.
+Không có token: chỉ lấy `trend` và `summary.teams` (phần mở).
+Có token hội viên `basic`: thêm `yuhuns`, `positions`, `counters`, `synergies`.
+
+Lấy danh sách 式神 từ file của crawl_shishen_rank.py.
 
 Ví dụ:
     python3 crawl_shishen_detail.py
@@ -16,7 +19,8 @@ import sys
 import time
 from pathlib import Path
 
-from onmyoji.http import ApiError
+from onmyoji.auth import AuthError, has_token, load_token
+from onmyoji.http import ApiError, AuthRequiredError
 from onmyoji.shishen_detail import ShishenDetailQuery, fetch_detail
 
 DEFAULT_INPUT = Path("out/shishen-rank-current.json")
@@ -30,6 +34,7 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--output", type=Path, default=DEFAULT_OUTPUT, help="file JSON xuất ra")
     parser.add_argument("--limit", type=int, default=None, help="chỉ lấy N 式神 đầu (mặc định: hết)")
     parser.add_argument("--delay", type=float, default=DEFAULT_DELAY, help=f"giây nghỉ giữa request (mặc định {DEFAULT_DELAY})")
+    parser.add_argument("--no-token", action="store_true", help="bỏ qua token, chỉ lấy phần dữ liệu mở")
     return parser
 
 
@@ -67,22 +72,40 @@ def main(argv: list[str] | None = None) -> int:
         print("Không có 式神 nào trong file đầu vào.", file=sys.stderr)
         return 1
 
-    print(f"Lấy chi tiết {len(ids)} 式神, nghỉ {args.delay}s mỗi request.", file=sys.stderr)
+    token: str | None = None
+    if not args.no_token and has_token():
+        try:
+            token = load_token()
+        except AuthError as exc:
+            print(f"Bỏ qua token: {exc}", file=sys.stderr)
+
+    tier = "có token (thử lấy cả dữ liệu hội viên)" if token else "không token (chỉ dữ liệu mở)"
+    print(f"Lấy chi tiết {len(ids)} 式神, nghỉ {args.delay}s mỗi request — {tier}.", file=sys.stderr)
 
     results: list[dict] = []
     failures: list[dict] = []
 
     for index, shishen_id in enumerate(ids, start=1):
         try:
-            detail = fetch_detail(query, shishen_id)
+            detail = fetch_detail(query, shishen_id, token=token)
+        except AuthRequiredError as exc:
+            print(f"  [{index}/{len(ids)}] {shishen_id} — token hết hạn/không đủ quyền: {exc}", file=sys.stderr)
+            print("  Chạy lại ./save-token.sh rồi thử tiếp.", file=sys.stderr)
+            break
         except ApiError as exc:
             failures.append({"shishen_id": shishen_id, "error": str(exc)})
             print(f"  [{index}/{len(ids)}] {shishen_id} lỗi: {exc}", file=sys.stderr)
             continue
 
         results.append(dict(detail.as_dict()))
+        extra = (
+            f" yuhun={len(detail.yuhuns)} pos={len(detail.positions)}"
+            f" counter={len(detail.counters)} synergy={len(detail.synergies)}"
+            if detail.has_paid_data
+            else ""
+        )
         print(
-            f"  [{index}/{len(ids)}] {shishen_id} → trend={len(detail.trend)} teams={len(detail.teams)}",
+            f"  [{index}/{len(ids)}] {shishen_id} → trend={len(detail.trend)} teams={len(detail.teams)}{extra}",
             file=sys.stderr,
         )
         if index < len(ids):
@@ -104,6 +127,7 @@ def main(argv: list[str] | None = None) -> int:
             "requested": len(ids),
             "fetched": len(results),
             "failed": len(failures),
+            "paid_sections": sum(1 for r in results if r.get("yuhuns")),
         },
         "details": results,
         "failures": failures,
@@ -112,7 +136,12 @@ def main(argv: list[str] | None = None) -> int:
     args.output.parent.mkdir(parents=True, exist_ok=True)
     args.output.write_text(json.dumps(document, ensure_ascii=False, indent=2), encoding="utf-8")
     size_kb = args.output.stat().st_size / 1024
-    print(f"Xong: {len(results)}/{len(ids)} 式神 -> {args.output} ({size_kb:.0f} KB)", file=sys.stderr)
+    paid = sum(1 for r in results if r.get("yuhuns"))
+    print(
+        f"Xong: {len(results)}/{len(ids)} 式神 -> {args.output} ({size_kb:.0f} KB); "
+        f"{paid} 式神 có dữ liệu hội viên",
+        file=sys.stderr,
+    )
     return 0
 
 

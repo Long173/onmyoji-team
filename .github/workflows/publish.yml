@@ -42,9 +42,12 @@ jobs:
         run: python3 crawl_shishen_rank.py --slug shishen-rank-current
 
       - name: Crawl trend và đội hình theo 式神
-        run: python3 crawl_shishen_detail.py
+        # --no-token: bản publish CHỈ được chứa dữ liệu mở. Runner không có token,
+        # nhưng khai tường minh để không bao giờ vô tình lấy dữ liệu sau tường phí.
+        run: python3 crawl_shishen_detail.py --no-token
 
       - name: Dựng báo cáo
+        # KHÔNG có --include-paid: dữ liệu hội viên basic không được publish.
         run: |
           python3 build_report.py \
             --version-label "Phiên bản hiện hành" \

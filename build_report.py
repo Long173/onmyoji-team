@@ -23,6 +23,7 @@ from onmyoji.report import (
     build_payload,
     build_yuhun_css,
     now_stamp,
+    paid_yuhun_ids,
     render_report,
 )
 from onmyoji.shishen_rank import referenced_shishen_ids, referenced_yuhun_ids
@@ -63,6 +64,15 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--version-label", default="Phiên bản hiện hành", help="nhãn phiên bản trên masthead")
     parser.add_argument("--version-cn", default="", help="tên phiên bản tiếng Trung")
     parser.add_argument("--skip-download", action="store_true", help="không tải avatar còn thiếu")
+    parser.add_argument(
+        "--include-paid",
+        action="store_true",
+        help=(
+            "đưa dữ liệu hội viên basic (ngự hồn chi tiết, đi cùng/đối đầu, vị trí BP) "
+            "vào báo cáo. Đây là nội dung sau tường phí của yysrank.win — chỉ dùng cho "
+            "bản xem tại máy, KHÔNG bật khi build bản publish công khai."
+        ),
+    )
     parser.add_argument(
         "--data-links",
         action="store_true",
@@ -123,6 +133,13 @@ def main(argv: list[str] | None = None) -> int:
         )
     )
     yuhun_ids = referenced_yuhun_ids(unit_rows)
+    if args.include_paid:
+        paid_ids = {
+            int(row["yuhun_id"])
+            for entry in ((unit_detail or {}).get("details") or [])
+            for row in (entry.get("yuhuns") or [])
+        }
+        yuhun_ids = tuple(sorted(set(yuhun_ids) | paid_ids))
 
     try:
         shishen_map = fetch_shishen_map()
@@ -163,6 +180,7 @@ def main(argv: list[str] | None = None) -> int:
             data_links=DATA_LINKS if args.data_links else (),
             unit_rank=unit_rank,
             unit_detail=unit_detail,
+            include_paid=args.include_paid,
         )
         avatar_css = build_avatar_css(shishen_ids, args.avatar_dir)
         yuhun_css = build_yuhun_css(yuhun_ids, args.yuhun_dir)
@@ -174,9 +192,14 @@ def main(argv: list[str] | None = None) -> int:
     args.output.parent.mkdir(parents=True, exist_ok=True)
     args.output.write_text(html, encoding="utf-8")
     size_mb = args.output.stat().st_size / 1_048_576
+    paid_note = ""
+    if args.include_paid:
+        paid_units = len(((payload.get("paid") or {}).get("units")) or {})
+        paid_note = f", {paid_units} 式神 có dữ liệu hội viên (BẢN NÀY KHÔNG ĐỂ PUBLISH)"
     print(
         f"Xong: {args.output} ({size_mb:.2f} MB, {len(teams)} đội hình, "
-        f"{len(stats)} 式神 trong meta, {len(unit_rows)} 式神 xếp hạng, {len(yuhun_ids)} ngự hồn)",
+        f"{len(stats)} 式神 trong meta, {len(unit_rows)} 式神 xếp hạng, "
+        f"{len(yuhun_ids)} ngự hồn{paid_note})",
         file=sys.stderr,
     )
     return 0

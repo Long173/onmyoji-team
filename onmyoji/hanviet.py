@@ -77,6 +77,10 @@ CHAR_TO_HANVIET: dict[str, str] = {
     "魔": "ma", "鱼": "ngư", "鲤": "lý", "鲸": "kình", "鳄": "ngạc", "鸟": "điểu",
     "鸦": "nha", "鸩": "trấm", "鹿": "lộc", "麓": "lộc", "黄": "hoàng", "黑": "hắc",
     "鼠": "thử", "鼬": "dứu", "龙": "long",
+    # Ký tự riêng của tên 阴阳师 (âm dương sư)
+    "丘": "khâu", "博": "bác", "原": "nguyên", "尼": "ni", "源": "nguyên",
+    "藤": "đằng", "赖": "lại", "长": "trường", "雅": "nhã",
+
 
     # Ký tự riêng của tên 御魂 (ngự hồn)
     "件": "kiện", "伎": "kỹ", "伤": "thương", "像": "tượng", "元": "nguyên", "共": "cộng",

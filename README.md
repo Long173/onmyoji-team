@@ -11,7 +11,8 @@ Site là SPA (Vue + Vite), toàn bộ dữ liệu đến từ REST API cùng dom
 |---|---|
 | `GET /api/team/rank` | bảng阵容 của trang `#/query/team` |
 | `GET /api/shishen/rank` | xếp hạng 式神: tier, chọn/ban/thắng, ngự hồn thường dùng, counter |
-| `GET /api/shishen/detail` | `trend` 33 ngày + `summary.teams` (100 đội hình, **không áp ngưỡng**) |
+| `GET /api/shishen/detail` | `trend` 33 ngày + `summary.teams`; thêm ngự hồn/ghép cặp/vị trí nếu có hội viên |
+| `GET /api/team/detail` | thứ tự BP, âm dương sư, đội hình đối đầu — **cần hội viên `basic`** |
 | `GET /api/asset/shishen` | map `shishen_id` → tên 式神 |
 | `GET /api/asset/shishen_stats` | chỉ số gốc của 273 式神 |
 | `GET /api/asset/yuhun` | 79 ngự hồn: tên, icon, hiệu ứng bộ |
@@ -114,10 +115,12 @@ Mỗi dòng: `tier` (0 mạnh nhất → 3), `tier_score`, `win_rate` (外战胜
 | Chỉ số gốc 式神 | `/api/asset/shishen_stats` | mở |
 | Tên + icon ngự hồn | `/api/asset/yuhun` | mở |
 | 3 ngự hồn hay dùng / 式神 | `/api/shishen/rank` | mở |
-| Phân bố ngự hồn đầy đủ | `/api/shishen/detail` → `summary.yuhuns` | trả rỗng — cần hội viên `basic` |
-| Ngự hồn theo từng đội hình | `/api/team/yuhun` | cần `basic` |
-| Chi tiết đội hình | `/api/team/detail` | cần `basic` |
-| Counter chi tiết, advance rank, team-counter | `/api/shishen/counter_detail`, `/api/advance/rank`, `/api/team-counter/*` | `401` |
+| Phân bố ngự hồn đầy đủ | `/api/shishen/detail` → `summary.yuhuns` | **`basic`** — đã xác minh |
+| Đi cùng / đối đầu / vị trí BP | `/api/shishen/detail` → `synergies`/`counters`/`positions` | **`basic`** |
+| Thứ tự BP, âm dương sư, đội hình đối đầu | `/api/team/detail` → `order`/`yys`/`counter` | **`basic`** |
+| `ban_stats` / `ban_conditions` | `/api/team/detail`, `/api/shishen/detail` | vẫn rỗng ở `basic` → cần `pro` |
+| Chiến báo công khai | `/api/team/public-records` | `请升级到高级版(Pro)` |
+| Counter chi tiết, advance rank, team-counter, recommend, team/yuhun | nhiều endpoint | mở ở `basic` nhưng còn `400 请求参数解析错误` — chưa tra đúng tham số |
 
 **Tài khoản free không mở thêm dữ liệu nào.** Đã kiểm bằng token thật: route
 `/query/team/detail` khai `accessTier: "free"` nhưng đó chỉ là quyền *mở trang* — API bên
@@ -177,6 +180,57 @@ light `#00805F`, dark `#2FA588` — cả hai pass lightness band, chroma floor v
 Màu accent UI cũ (`#1C6B58` / `#4EC0A0`) không đạt chroma floor khi làm mark biểu đồ nên
 biểu đồ dùng token riêng (`--chart-line`).
 
+## Dữ liệu hội viên `basic`
+
+```bash
+./save-token.sh                    # copy token vào clipboard trước, rồi TỰ GÕ lệnh này
+python3 crawl_shishen_detail.py    # tự dùng .token nếu có
+python3 build_report.py --include-paid --output report/meta-dau-ky-full.html
+```
+
+Với token `basic`, `/api/shishen/detail` trả thêm 4 mục mà tài khoản free nhận array rỗng:
+
+| Mục | Nội dung | Ví dụ (荒骷髅) |
+|---|---|---|
+| `summary.yuhuns` | mỗi bộ ngự hồn: `yuhun_id`, `total`, `win_rate` | 29 bộ; 木魅 62,5% qua 1.858 trận |
+| `summary.synergies` | 式神 đi cùng: `shishen_id`, `total`, `win_rate` | 162 dòng |
+| `summary.counters` | 式神 gặp phải | 157 dòng |
+| `summary.positions` | hiệu quả theo lượt chọn BP | 6 lượt |
+
+`/api/team/detail` cũng mở ở `basic`: `order` (16 thứ tự BP kèm win/pick/total),
+`yys` (âm dương sư dẫn dắt), `counter` (50 đội hình đối đầu). Riêng `yuhun` và
+`ban_stats` trong đó vẫn rỗng — cần `pro`.
+
+### Lọc nhiễu là bắt buộc
+
+Median toàn bộ dòng ngự hồn chỉ **7 trận**. Trong 884 dòng, chỉ 141 dòng đạt ≥100 trận.
+Nên `onmyoji/report.py` lọc ngự hồn từ 100 trận, ghép cặp từ 300 trận, vị trí từ 50 trận,
+và tính **chênh lệch so với tỉ lệ thắng chung của chính 式神 đó** — đó mới là tín hiệu
+dùng được ("bộ này hơn trung bình +11,2 điểm"), chứ không phải con số tuyệt đối.
+
+### ⚠️ Không publish dữ liệu trả phí
+
+Đây là nội dung sau tường phí của yysrank.win. Ba lớp chặn:
+
+1. `build_report.py` **mặc định không** đưa dữ liệu hội viên vào báo cáo; phải khai
+   tường minh `--include-paid`.
+2. Workflow **không** truyền `--include-paid`, và chạy `crawl_shishen_detail.py --no-token`
+   để runner không bao giờ lấy được dữ liệu đó dù có secret.
+3. `.token`, `out/`, `report/` đều gitignored.
+
+Bản đầy đủ để ở `report/meta-dau-ky-full.html`, mở tại máy — không đẩy lên đâu cả.
+
+### Màu thanh chênh lệch
+
+Cặp đối cực đã validate bằng `dataviz/validate_palette.js`:
+light `#00805F` / `#A65A18`, dark `#2FA588` / `#C97A3C`.
+
+Ban đầu mình dùng jade + hồng, nhưng **hồng càng đậm thì separation deutan càng tệ**
+(xanh↔đỏ là cặp mù màu kinh điển): ở dark mode mọi tông hồng đều ra ΔE 0,3–3,9, dưới cả
+floor 6 nên không hợp lệ kể cả khi có encoding phụ. Đổi cực âm sang cam thì ΔE lên 9,2
+(light, protan) và 10,4 (dark, deutan) — vượt mốc 8, pass không WARN. Dấu còn được mã hoá
+bằng **hướng thanh** và **nhãn số có dấu**, không phụ thuộc màu.
+
 ## Deploy lên GitHub Pages
 
 Workflow `.github/workflows/publish.yml` tự crawl lại rồi publish, chạy khi push vào `main`,
@@ -221,6 +275,7 @@ crawl_team_rank.py      # CLI crawl bảng đội hình
 crawl_shishen_rank.py   # CLI crawl bảng xếp hạng 式神
 crawl_shishen_detail.py # CLI crawl trend + đội hình theo 式神
 crawl_team_detail.py    # CLI chi tiết đội hình — CẦN hội viên basic
+save-token.sh           # lưu token từ clipboard, có kiểm tra định dạng
 build_report.py         # CLI dựng báo cáo HTML
 onmyoji/http.py         # GET JSON + retry + validate envelope
 onmyoji/assets.py       # map id -> tên 式神 / server
@@ -229,6 +284,7 @@ onmyoji/shishen_rank.py # ShishenRankQuery + nhãn cột/tier/hiệu ứng bộ
 onmyoji/shishen_detail.py # ShishenDetailQuery: trend + teams
 onmyoji/team_detail.py  # /api/team/detail (cần basic)
 onmyoji/auth.py         # đọc token từ ONMYOJI_TOKEN hoặc .token, không bao giờ log
+onmyoji/yys.py          # 6 âm dương sư (yys_id 1-6 và 10-16 cùng trỏ về 6 nhân vật)
 onmyoji/output.py       # chuẩn hoá bản ghi, ghi JSON/CSV
 onmyoji/hanviet.py      # bảng ký tự Hán -> âm Hán-Việt (412 ký tự)
 onmyoji/translate.py    # dịch tên + bảng tên thông dụng
