@@ -250,7 +250,40 @@ section.block { padding-top: 56px; }
   padding: 7px 10px;
 }
 
-.field input[type="search"] { min-width: 230px; }
+.field input[type="search"] { min-width: 200px; }
+.field input[type="search"].exclude { border-color: var(--chart-neg); }
+
+.field .sub-hint {
+  font-family: var(--f-data);
+  font-size: 10px;
+  color: var(--muted);
+  letter-spacing: 0;
+  text-transform: none;
+}
+
+.filter-echo {
+  flex-basis: 100%;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  align-items: center;
+  font-family: var(--f-data);
+  font-size: 11px;
+  color: var(--muted);
+}
+
+.filter-echo:empty { display: none; }
+
+.filter-echo .chip {
+  border: 1px solid var(--hairline);
+  border-radius: 10px;
+  padding: 1px 8px;
+  background: var(--surface);
+}
+
+.filter-echo .chip.yes { border-color: var(--chart-line); color: var(--ink-soft); }
+.filter-echo .chip.no { border-color: var(--chart-neg); color: var(--ink-soft); }
+.filter-echo .chip.miss { border-style: dashed; color: var(--chart-neg); }
 
 .field input[type="range"] { width: 150px; accent-color: var(--jade); }
 
@@ -1070,8 +1103,12 @@ __AVATAR_CSS__
 
     <div class="controls">
       <div class="field">
-        <label for="q">Tìm 式神</label>
-        <input id="q" type="search" placeholder="Hoang Khô Lâu, 荒骷髅, Gashadokuro, 585…" autocomplete="off">
+        <label for="q">Có 式神 <span class="sub-hint">(phẩy = và)</span></label>
+        <input id="q" type="search" placeholder="tuu thon, diem ma" autocomplete="off">
+      </div>
+      <div class="field">
+        <label for="qx">Không có <span class="sub-hint">(phẩy = hoặc)</span></label>
+        <input id="qx" type="search" class="exclude" placeholder="cat diep" autocomplete="off">
       </div>
       <div class="field">
         <label for="sort">Sắp xếp</label>
@@ -1094,6 +1131,7 @@ __AVATAR_CSS__
         <label for="only-detail">Chỉ đội có chi tiết <span class="hint" id="only-detail-count"></span></label>
       </div>
       <div class="result-count" id="count">—</div>
+      <div class="filter-echo" id="filter-echo"></div>
     </div>
 
     <ol class="ledger" id="ledger"></ol>
@@ -1153,8 +1191,12 @@ __AVATAR_CSS__
     <p class="hidden-note" id="hidden-note"></p>
     <div class="controls">
       <div class="field">
-        <label for="hq">Tìm 式神</label>
-        <input id="hq" type="search" placeholder="Hoang Khô Lâu, 荒骷髅, 585…" autocomplete="off">
+        <label for="hq">Có 式神 <span class="sub-hint">(phẩy = và)</span></label>
+        <input id="hq" type="search" placeholder="hoang kho lau, 585" autocomplete="off">
+      </div>
+      <div class="field">
+        <label for="hqx">Không có <span class="sub-hint">(phẩy = hoặc)</span></label>
+        <input id="hqx" type="search" class="exclude" placeholder="cat diep" autocomplete="off">
       </div>
       <div class="field">
         <label for="hmin">Số trận tối thiểu</label>
@@ -1313,6 +1355,8 @@ __AVATAR_CSS__
   var LEDGER_LIMIT = 800;
   var ledger = document.getElementById("ledger");
   var onlyDetailEl = document.getElementById("only-detail");
+  var qxEl = document.getElementById("qx");
+  var echoEl = document.getElementById("filter-echo");
   var countEl = document.getElementById("count");
   var qEl = document.getElementById("q");
   var sortEl = document.getElementById("sort");
@@ -1456,15 +1500,77 @@ __AVATAR_CSS__
     return '<div class="team-detail" hidden>' + left + "<div>" + right + "</div></div>";
   }
 
-  function matchesQuery(team, needle) {
-    if (!needle) return true;
-    for (var i = 0; i < team.team_ids.length; i += 1) {
-      var id = team.team_ids[i];
+  /* ---------- loc nhieu 式神, co loai tru ----------
+     Gõ không dấu vẫn khớp: bỏ dấu phụ rồi hạ chữ thường cả hai phía.
+     "Có" = AND từng từ khoá; "Không có" = OR (trùng một từ là loại). */
+
+  function normalizeText(value) {
+    return String(value)
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .replace(/đ/g, "d")
+      .replace(/Đ/g, "D")
+      .toLowerCase();
+  }
+
+  var HAYSTACK = {};
+
+  function shishenHaystack(id) {
+    if (HAYSTACK[id] === undefined) {
       var n = nameOf(id);
-      var hay = (n.vn + " " + n.cn + " " + n.common + " " + id).toLowerCase();
-      if (hay.indexOf(needle) !== -1) return true;
+      HAYSTACK[id] = normalizeText(n.vn + " " + n.cn + " " + n.common + " " + id);
     }
-    return false;
+    return HAYSTACK[id];
+  }
+
+  function parseTerms(value) {
+    return normalizeText(value)
+      .split(/[,;]+/)
+      .map(function (t) { return t.trim(); })
+      .filter(Boolean);
+  }
+
+  function termHits(term) {
+    var hits = [];
+    Object.keys(NAMES).forEach(function (id) {
+      if (shishenHaystack(Number(id)).indexOf(term) !== -1) hits.push(Number(id));
+    });
+    return hits;
+  }
+
+  function teamMatchesTerms(team, includes, excludes) {
+    var hay = team.team_ids.map(shishenHaystack);
+
+    for (var i = 0; i < includes.length; i += 1) {
+      var wanted = includes[i];
+      var found = false;
+      for (var a = 0; a < hay.length; a += 1) {
+        if (hay[a].indexOf(wanted) !== -1) { found = true; break; }
+      }
+      if (!found) return false;
+    }
+
+    for (var j = 0; j < excludes.length; j += 1) {
+      var banned = excludes[j];
+      for (var b = 0; b < hay.length; b += 1) {
+        if (hay[b].indexOf(banned) !== -1) return false;
+      }
+    }
+    return true;
+  }
+
+  function renderFilterEcho(target, includes, excludes) {
+    if (!target) return;
+    var chips = includes.map(function (t) {
+      var n = termHits(t).length;
+      return '<span class="chip ' + (n ? "yes" : "miss") + '">' +
+        (n ? "có " : "không có 式神 nào khớp: ") + t + (n ? " (" + n + ")" : "") + "</span>";
+    }).concat(excludes.map(function (t) {
+      var n = termHits(t).length;
+      return '<span class="chip ' + (n ? "no" : "miss") + '">' +
+        (n ? "trừ " : "không có 式神 nào khớp: ") + t + (n ? " (" + n + ")" : "") + "</span>";
+    }));
+    target.innerHTML = chips.join("");
   }
 
   function hasDetail(team) {
@@ -1473,14 +1579,17 @@ __AVATAR_CSS__
   }
 
   function render() {
-    var needle = qEl.value.trim().toLowerCase();
+    var includes = parseTerms(qEl.value);
+    var excludes = parseTerms(qxEl.value);
     var floor = Number(minEl.value);
     var key = sortEl.value;
     var onlyDetail = onlyDetailEl.checked;
 
+    renderFilterEcho(echoEl, includes, excludes);
+
     var rows = TEAMS.filter(function (t) {
       if (onlyDetail && !hasDetail(t)) return false;
-      return t.total >= floor && matchesQuery(t, needle);
+      return t.total >= floor && teamMatchesTerms(t, includes, excludes);
     }).slice().sort(function (a, b) {
       return b[key] - a[key];
     });
@@ -1509,6 +1618,7 @@ __AVATAR_CSS__
   }
 
   qEl.addEventListener("input", render);
+  qxEl.addEventListener("input", render);
   ledger.addEventListener("click", toggleDetail);
   sortEl.addEventListener("change", render);
   minEl.addEventListener("input", function () {
@@ -1814,23 +1924,24 @@ __AVATAR_CSS__
   var usortEl = document.getElementById("usort");
   var ucountEl = document.getElementById("ucount");
 
-  function unitMatches(u, needle) {
-    if (!needle) return true;
+  function unitMatches(u, terms) {
+    if (!terms.length) return true;
     var n = unitName(u.shishen_id);
     var hay = n.vn + " " + n.cn + " " + n.common + " " + u.shishen_id;
     (u.most_used_yuhuns || []).forEach(function (yid) {
       var y = yuhunOf(yid);
       hay += " " + y.vn + " " + y.cn;
     });
-    return hay.toLowerCase().indexOf(needle) !== -1;
+    hay = normalizeText(hay);
+    return terms.every(function (t) { return hay.indexOf(t) !== -1; });
   }
 
   function renderUnits() {
-    var needle = uqEl.value.trim().toLowerCase();
+    var terms = parseTerms(uqEl.value);
     var key = usortEl.value;
     var ascending = key === "avg_position";
 
-    var rows = UNITS.filter(function (u) { return unitMatches(u, needle); })
+    var rows = UNITS.filter(function (u) { return unitMatches(u, terms); })
       .slice()
       .sort(function (a, b) {
         var av = a[key] == null ? 0 : a[key];
@@ -1883,6 +1994,7 @@ __AVATAR_CSS__
 
   var hiddenLedger = document.getElementById("hidden-ledger");
   var hqEl = document.getElementById("hq");
+  var hqxEl = document.getElementById("hqx");
   var hminEl = document.getElementById("hmin");
   var hminValEl = document.getElementById("hmin-val");
   var hcountEl = document.getElementById("hcount");
@@ -1907,11 +2019,12 @@ __AVATAR_CSS__
   }
 
   function renderHidden() {
-    var needle = hqEl.value.trim().toLowerCase();
+    var includes = parseTerms(hqEl.value);
+    var excludes = parseTerms(hqxEl.value);
     var floor = Number(hminEl.value);
 
     var rows = HIDDEN_TEAMS.filter(function (r) {
-      return r.matches >= floor && matchesQuery(r, needle);
+      return r.matches >= floor && teamMatchesTerms(r, includes, excludes);
     });
 
     hcountEl.textContent = intFmt.format(rows.length) + " / " + intFmt.format(HIDDEN_TEAMS.length) + " đội hình";
@@ -1939,6 +2052,7 @@ __AVATAR_CSS__
       "<b>Mẫu nhỏ thì tỉ lệ thắng dao động mạnh</b> — kéo ngưỡng số trận lên để lọc bớt nhiễu.";
 
     hqEl.addEventListener("input", renderHidden);
+    hqxEl.addEventListener("input", renderHidden);
     hminEl.addEventListener("input", function () {
       hminValEl.textContent = "≥ " + intFmt.format(Number(hminEl.value));
       renderHidden();

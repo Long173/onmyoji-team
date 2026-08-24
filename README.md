@@ -281,6 +281,26 @@ các lựa chọn phổ biến đạt 100–354 trận.
 Đối chiếu với ngự hồn meta-wide ở tab 式神 (mẫu hàng nghìn trận): 3/5 vị trí khớp,
 2 vị trí khác — phần khác nhau mới là thứ đáng xem, nhưng cũng có thể là do mẫu lệch.
 
+### Lọc nhiều 式神, có loại trừ
+
+Hai ô ở cả **Sổ đội hình** và **Đội hình dưới ngưỡng**:
+
+| Ô | Ngữ nghĩa | Ví dụ |
+|---|---|---|
+| **Có 式神** | dấu phẩy = **AND** — đội phải chứa tất cả | `tuu thon, diem ma` |
+| **Không có** | dấu phẩy = **OR** — trùng một từ là loại | `cat diep` |
+
+Khớp theo **chuỗi con** trên tên Hán-Việt, tên gốc tiếng Trung, tên thông dụng và id;
+gõ **không dấu vẫn khớp** (bỏ dấu phụ hai phía, `đ`→`d`). Nên `tuu thon`, `Tửu Thôn`
+và `酒吞` cho cùng kết quả. Tab 式神 dùng cùng cơ chế, thêm cả tên ngự hồn.
+
+Dưới thanh điều khiển có dãy chip echo lại từ khoá kèm **số 式神 khớp**, và tô viền
+gạch đỏ khi từ khoá không khớp con nào — để không ngồi nhìn bảng rỗng mà tưởng
+không có đội hình nào.
+
+Kiểm chứng trên dữ liệu thật: `tuu thon` → 94 đội, `diem ma` → 153, cả hai (AND)
+→ 17, thêm trừ `cat diep` → 16. Đối chiếu bằng đoạn JS độc lập cũng ra 16.
+
 ### Màu thanh chênh lệch
 
 Cặp đối cực đã validate bằng `dataviz/validate_palette.js`:
