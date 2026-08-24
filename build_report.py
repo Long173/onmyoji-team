@@ -39,11 +39,13 @@ DEFAULT_UNIT_INPUT = Path("out/shishen-rank-current.json")
 DEFAULT_DETAIL_INPUT = Path("out/shishen-detail-current.json")
 DEFAULT_TEAM_DETAIL_INPUT = Path("out/team-detail-current.json")
 DEFAULT_PAID_INPUT = Path("prebuilt/paid.json")
+DEFAULT_EXTRAS_INPUT = Path("out/extras-current.json")
 DATA_LINKS = (
     {"label": "đội hình JSON", "href": "team-rank-current.json"},
     {"label": "đội hình CSV", "href": "team-rank-current.csv"},
     {"label": "式神 JSON", "href": "shishen-rank-current.json"},
     {"label": "trend JSON", "href": "shishen-detail-current.json"},
+    {"label": "nhãn + thống kê JSON", "href": "extras-current.json"},
 )
 
 
@@ -91,6 +93,12 @@ def build_parser() -> argparse.ArgumentParser:
             "khối dữ liệu hội viên đã commit (do export_paid.py sinh ra). Có file này thì "
             "báo cáo tự trộn vào, khỏi cần token — đây là cách CI có được dữ liệu đó."
         ),
+    )
+    parser.add_argument(
+        "--extras-input",
+        type=Path,
+        default=DEFAULT_EXTRAS_INPUT,
+        help="file của crawl_extras.py (nhãn vai trò, thống kê site, độ nóng) — endpoint mở",
     )
     parser.add_argument(
         "--no-paid-input",
@@ -142,6 +150,15 @@ def main(argv: list[str] | None = None) -> int:
     else:
         print(f"Không thấy {args.detail_input} — bỏ sparkline và đội hình dưới ngưỡng.", file=sys.stderr)
 
+    extras: dict | None = None
+    if args.extras_input.is_file():
+        try:
+            extras = json.loads(args.extras_input.read_text(encoding="utf-8"))
+        except (OSError, json.JSONDecodeError) as exc:
+            print(f"Bỏ qua nhãn/thống kê — không đọc được {args.extras_input}: {exc}", file=sys.stderr)
+    else:
+        print(f"Không thấy {args.extras_input} — bỏ nhãn vai trò và khối bối cảnh.", file=sys.stderr)
+
     paid_payload: dict | None = None
     if not args.no_paid_input and args.paid_input.is_file():
         try:
@@ -177,6 +194,12 @@ def main(argv: list[str] | None = None) -> int:
         for sid in (row.get("team") or [])
     }
     paid_shishen_ids = set(paid_payload_shishen_ids(paid_payload)) if paid_payload else set()
+    if paid_payload:
+        paid_shishen_ids |= {
+            int(x)
+            for row in (((paid_payload.get("players") or {}).get("rows")) or [])
+            for x in (row.get("common_shishens") or [])
+        }
     hidden_ids = {
         int(sid)
         for entry in ((unit_detail or {}).get("details") or [])
@@ -245,6 +268,7 @@ def main(argv: list[str] | None = None) -> int:
             team_detail=team_detail,
             include_paid=args.include_paid,
             paid_payload=paid_payload,
+            extras=extras,
         )
         avatar_css = build_avatar_css(shishen_ids, args.avatar_dir)
         yuhun_css = build_yuhun_css(yuhun_ids, args.yuhun_dir)

@@ -116,6 +116,7 @@ def build_payload(
     team_detail: Mapping[str, Any] | None = None,
     include_paid: bool = False,
     paid_payload: Mapping[str, Any] | None = None,
+    extras: Mapping[str, Any] | None = None,
     sibling_link: Mapping[str, str] | None = None,
 ) -> Mapping[str, Any]:
     """Gói dữ liệu mà template cần — thuần dữ liệu, không HTML."""
@@ -165,6 +166,7 @@ def build_payload(
         "shishen": [stat.as_dict() for stat in stats],
         **_unit_section(unit_rank),
         **_detail_section(unit_detail, teams),
+        **_extras_section(extras),
         **(
             dict(paid_payload)
             if paid_payload
@@ -515,7 +517,7 @@ def team_paid_shishen_ids(payload: Mapping[str, Any]) -> tuple[int, ...]:
     return tuple(sorted(found))
 
 
-PAID_PAYLOAD_KEYS = ("paid", "team_paid", "team_yuhun", "yuhun_all", "yys")
+PAID_PAYLOAD_KEYS = ("paid", "team_paid", "team_yuhun", "players", "yuhun_all", "yys")
 
 
 def build_paid_payload(
@@ -523,6 +525,7 @@ def build_paid_payload(
     unit_rank: Mapping[str, Any] | None,
     team_detail: Mapping[str, Any] | None,
     team_yuhun: Mapping[str, Any] | None = None,
+    player_board: Mapping[str, Any] | None = None,
 ) -> Mapping[str, Any]:
     """Gom toàn bộ phần dữ liệu hội viên thành một khối để commit rồi trộn lại sau.
 
@@ -533,6 +536,7 @@ def build_paid_payload(
         **_paid_section(unit_detail, unit_rank, include_paid=True),
         **_team_paid_section(team_detail, include_paid=True),
         **_team_yuhun_section(team_yuhun),
+        **_player_section(player_board),
     }
 
 
@@ -542,7 +546,8 @@ def paid_payload_is_empty(paid_payload: Mapping[str, Any] | None) -> bool:
     units = ((paid_payload.get("paid") or {}).get("units")) or {}
     teams = ((paid_payload.get("team_paid") or {}).get("teams")) or {}
     yuhun = ((paid_payload.get("team_yuhun") or {}).get("teams")) or {}
-    return not units and not teams and not yuhun
+    players = ((paid_payload.get("players") or {}).get("rows")) or []
+    return not units and not teams and not yuhun and not players
 
 
 def paid_payload_shishen_ids(paid_payload: Mapping[str, Any]) -> tuple[int, ...]:
@@ -603,4 +608,53 @@ def team_yuhun_ids(paid_payload: Mapping[str, Any]) -> tuple[int, ...]:
         for team in teams.values()
         for option in team.get("options") or ()
     }
+    return tuple(sorted(found))
+
+
+MIN_PLAYER_MATCHES = 20
+
+
+def _extras_section(extras: Mapping[str, Any] | None) -> Mapping[str, Any]:
+    """Nhãn vai trò, thống kê site, độ nóng — đều từ endpoint MỞ nên CI crawl được."""
+    if not extras:
+        return {"tags": {}, "site": {}, "heat": {}}
+    return {
+        "tags": dict(extras.get("tags") or {}),
+        "site": dict(extras.get("statistic") or {}),
+        "heat": dict(extras.get("heat") or {}),
+    }
+
+
+def _player_section(player_board: Mapping[str, Any] | None) -> Mapping[str, Any]:
+    """BXH người chơi. Cần đăng nhập nên đi cùng khối token, không phải khối mở.
+
+    Lọc bỏ dòng quá ít trận: điểm và tỉ lệ thắng của mẫu 5-10 trận không nói gì.
+    """
+    board = (player_board or {}).get("board") or {}
+    rows = board.get("rows") or []
+    if not rows:
+        return {"players": {}}
+
+    kept = [
+        dict(r) for r in rows if int(r.get("total") or 0) >= MIN_PLAYER_MATCHES
+    ]
+    if not kept:
+        return {"players": {}}
+
+    return {
+        "players": {
+            "window": [str(board.get("start_time") or ""), str(board.get("end_time") or "")],
+            "min_matches": MIN_PLAYER_MATCHES,
+            "total_rows": len(rows),
+            "rows": kept,
+        }
+    }
+
+
+def player_shishen_ids_from_payload(paid_payload: Mapping[str, Any]) -> tuple[int, ...]:
+    """式神 cần avatar cho BXH người chơi."""
+    rows = ((paid_payload.get("players") or {}).get("rows")) or []
+    found: set[int] = set()
+    for row in rows:
+        found.update(int(x) for x in (row.get("common_shishens") or ()))
     return tuple(sorted(found))

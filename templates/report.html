@@ -1007,6 +1007,125 @@ td.pic { width: 46px; }
   border-radius: 2px;
 }
 
+/* ---------- nhan vai tro ---------- */
+
+.role-row { display: flex; flex-wrap: wrap; gap: 4px; align-items: flex-start; }
+
+.role {
+  font-family: var(--f-data);
+  font-size: 10px;
+  line-height: 1.5;
+  letter-spacing: 0.02em;
+  padding: 1px 6px;
+  border-radius: 9px;
+  border: 1px solid var(--hairline);
+  color: var(--muted);
+  white-space: nowrap;
+}
+
+.role.dmg  { border-color: var(--chart-neg); color: var(--chart-neg); }
+.role.tank { border-color: var(--chart-line); color: var(--chart-line); }
+.role.ctrl { border-color: var(--gold); color: var(--gold); }
+
+/* ---------- khoi boi canh site ---------- */
+
+.context {
+  display: grid;
+  grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr);
+  gap: 30px;
+  padding: 26px 0 4px;
+  border-bottom: 1px solid var(--hairline);
+}
+
+.context h3 {
+  font-family: var(--f-data);
+  font-size: 10px;
+  letter-spacing: 0.13em;
+  text-transform: uppercase;
+  color: var(--muted);
+  font-weight: 400;
+  margin: 0 0 10px;
+}
+
+.bracket-row {
+  display: grid;
+  grid-template-columns: 150px minmax(0, 1fr) 58px 44px;
+  gap: 10px;
+  align-items: center;
+  padding: 3px 0;
+  font-family: var(--f-data);
+  font-size: 11.5px;
+  font-variant-numeric: tabular-nums;
+  color: var(--muted);
+}
+
+.bracket-row .lb { font-family: var(--f-body); font-size: 12.5px; color: var(--ink-soft); }
+.bracket-row .bar { height: 7px; background: var(--meter-track); border-radius: 4px; overflow: hidden; }
+.bracket-row .bar > i { display: block; height: 100%; background: var(--chart-line); border-radius: 4px; }
+.bracket-row .vl { text-align: right; color: var(--ink-soft); }
+.bracket-row .pc { text-align: right; }
+
+.days { display: flex; align-items: flex-end; gap: 5px; height: 60px; }
+
+.days .day { flex: 1 1 0; display: flex; flex-direction: column; justify-content: flex-end; gap: 3px; }
+.days .day i { display: block; background: var(--jade-dim); border-radius: 2px 2px 0 0; }
+.days .day.last i { background: var(--chart-line); }
+.days .day span {
+  font-family: var(--f-data);
+  font-size: 9.5px;
+  color: var(--muted);
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+}
+
+.context .note {
+  font-family: var(--f-data);
+  font-size: 10.5px;
+  color: var(--muted);
+  margin-top: 9px;
+  line-height: 1.5;
+}
+
+/* ---------- tab nguoi choi ---------- */
+
+.player-row {
+  display: grid;
+  grid-template-columns: 40px minmax(0, 1fr) 66px 60px 56px minmax(0, 150px);
+  gap: 12px;
+  align-items: center;
+  padding: 8px 4px;
+  border-bottom: 1px solid var(--hairline-soft);
+  font-family: var(--f-data);
+  font-size: 11.5px;
+  font-variant-numeric: tabular-nums;
+  color: var(--muted);
+}
+
+.player-row:hover { background: var(--surface); }
+.player-row .rk { text-align: right; }
+.player-row .nm { font-family: var(--f-body); font-size: 13px; color: var(--ink); overflow-wrap: anywhere; }
+.player-row .nm .badge {
+  font-family: var(--f-data);
+  font-size: 9.5px;
+  color: var(--jade);
+  border: 1px solid var(--jade-dim);
+  border-radius: 8px;
+  padding: 0 5px;
+  margin-left: 6px;
+}
+.player-row .sc { text-align: right; color: var(--ink-soft); font-size: 12.5px; }
+.player-row .wr { text-align: right; color: var(--ink-soft); }
+.player-row .mt { text-align: right; }
+.player-row .faces { display: flex; gap: 3px; flex-wrap: wrap; }
+.player-row .faces .av { width: 24px; height: 24px; }
+
+@media (max-width: 900px) {
+  .context { grid-template-columns: minmax(0, 1fr); gap: 22px; }
+  .bracket-row { grid-template-columns: 118px minmax(0, 1fr) 50px 40px; }
+  .player-row { grid-template-columns: 34px minmax(0, 1fr) 60px 54px; }
+  .player-row .mt, .player-row .faces { display: none; }
+}
+
 /* ---------- tab nav ---------- */
 
 .tabs {
@@ -1222,12 +1341,28 @@ __AVATAR_CSS__
 
   <dl class="figures" id="figures"></dl>
 
+  <section class="context" id="context" hidden>
+    <div>
+      <h3>Phân bố người chơi theo đoạn · 分数段</h3>
+      <div id="brackets"></div>
+      <p class="note" id="context-note"></p>
+    </div>
+    <div>
+      <h3>Số trận 7 ngày gần nhất</h3>
+      <div class="days" id="days"></div>
+      <p class="note" id="days-note"></p>
+    </div>
+  </section>
+
   <nav class="tabs" role="tablist" aria-label="Phần của báo cáo">
     <button type="button" role="tab" id="tab-teams" aria-controls="panel-teams" aria-selected="true">
       Đội hình <span class="cn">阵容</span>
     </button>
     <button type="button" role="tab" id="tab-units" aria-controls="panel-units" aria-selected="false">
       式神 <span class="cn">式神排行</span>
+    </button>
+    <button type="button" role="tab" id="tab-players" aria-controls="panel-players" aria-selected="false" hidden>
+      Người chơi <span class="cn">战报排行</span>
     </button>
   </nav>
 
@@ -1415,6 +1550,8 @@ __AVATAR_CSS__
             <th style="text-align:right">Đội hình</th>
             <th style="text-align:right">Trận</th>
             <th style="text-align:right">Thắng</th>
+            <th style="text-align:right" title="số lần được chọn, toàn site">Pick</th>
+            <th style="text-align:right" title="số lần bị ban, toàn site">Ban</th>
             <th style="text-align:right">ID</th>
           </tr>
         </thead>
@@ -1424,6 +1561,17 @@ __AVATAR_CSS__
   </section>
 
 </div><!-- /panel-units -->
+
+<div class="tab-panel" id="panel-players" role="tabpanel" aria-labelledby="tab-players" hidden>
+  <section class="block">
+    <div class="block-head">
+      <h2>Bảng xếp hạng người chơi</h2>
+      <span class="cn">战报排行</span>
+    </div>
+    <p class="block-note" id="players-note"></p>
+    <div id="players"></div>
+  </section>
+</div><!-- /panel-players -->
 
   <footer>
     <span id="foot-meta">—</span>
@@ -1522,6 +1670,41 @@ __AVATAR_CSS__
       '<dd>' + t.value + (t.unit ? ' <span class="unit">' + t.unit + "</span>" : "") + "</dd>" +
       '<span class="note">' + t.note + "</span></div>";
   }).join("");
+
+  /* ---------- boi canh site ---------- */
+
+  var SITE = DATA.site || {};
+
+  if (SITE.score_brackets && SITE.score_brackets.length) {
+    var brackets = SITE.score_brackets;
+    var totalPlayers = brackets.reduce(function (acc, b) { return acc + b.value; }, 0);
+    var widest = Math.max.apply(null, brackets.map(function (b) { return b.value; }));
+
+    document.getElementById("brackets").innerHTML = brackets.map(function (b) {
+      var width = widest ? (b.value / widest) * 100 : 0;
+      return '<div class="bracket-row"><span class="lb" title="' + b.cn + '">' + b.vn + "</span>" +
+        '<span class="bar"><i style="width:' + width.toFixed(1) + '%"></i></span>' +
+        '<span class="vl">' + intFmt.format(b.value) + "</span>" +
+        '<span class="pc">' + pct(totalPlayers ? b.value / totalPlayers : 0, 0) + "</span></div>";
+    }).join("");
+    document.getElementById("context-note").textContent =
+      intFmt.format(totalPlayers) + " người chơi có dữ liệu, trên tổng " +
+      intFmt.format(SITE.total_matches || 0) + " trận toàn site.";
+
+    var days = SITE.last_days || [];
+    if (days.length) {
+      var top = Math.max.apply(null, days);
+      document.getElementById("days").innerHTML = days.map(function (v, i) {
+        var h = top ? Math.max(3, (v / top) * 46) : 3;
+        return '<div class="day' + (i === days.length - 1 ? " last" : "") + '">' +
+          '<i style="height:' + h.toFixed(0) + 'px"></i>' +
+          "<span>" + Math.round(v / 1000) + "k</span></div>";
+      }).join("");
+      document.getElementById("days-note").textContent =
+        "Cũ nhất → mới nhất. Ngày gần nhất: " + intFmt.format(days[days.length - 1]) + " trận.";
+    }
+    document.getElementById("context").hidden = false;
+  }
 
   /* ---------- ledger ---------- */
 
@@ -2098,6 +2281,34 @@ __AVATAR_CSS__
   var STATS = DATA.stats || {};
   var YUHUN = DATA.yuhun || {};
 
+  var TAGS = DATA.tags || {};
+  var HEAT = DATA.heat || {};
+
+  // Nhóm nhãn để tô màu: sát thương / chống chịu / khống chế. Còn lại để trung tính.
+  var ROLE_CLASS = (function () {
+    var map = {};
+    ["Sát thương", "Tăng sát thương", "Phá khiên", "Đánh ngoài lượt"].forEach(function (v) { map[v] = "dmg"; });
+    ["Khiên", "Hồi máu", "Trị liệu / hồi phục", "Giảm sát thương nhận", "Sinh tồn",
+     "Hồi sinh", "Miễn tử", "Tăng kháng"].forEach(function (v) { map[v] = "tank"; });
+    ["Khống chế đơn", "Khống chế nhóm", "Kéo thanh", "Đẩy thanh", "Khoá thanh",
+     "Tranh tốc", "Giải khống chế", "Miễn khống chế", "Phản khống chế",
+     "Chống tranh tốc", "Chặn khống chế", "Tự kéo thanh"].forEach(function (v) { map[v] = "ctrl"; });
+    return map;
+  })();
+
+  function heatOf(id) {
+    return HEAT[String(id)] || { picks: 0, bans: 0 };
+  }
+
+  function roleChips(shishenId) {
+    var tags = TAGS[String(shishenId)];
+    if (!tags || !tags.length) return "";
+    return '<div class="role-row">' + tags.map(function (t) {
+      var cls = ROLE_CLASS[t.vn] || "";
+      return '<span class="role ' + cls + '" title="' + t.cn + '">' + t.vn + "</span>";
+    }).join("") + "</div>";
+  }
+
   var STAT_ORDER = [
     { key: "Attack", label: "Công" },
     { key: "Hp", label: "HP" },
@@ -2143,7 +2354,8 @@ __AVATAR_CSS__
         '<span class="tier-badge tier-' + tier + '">T' + tier + "</span></div>" +
       '<div class="identity"><span class="vn">' + n.vn + "</span>" +
         '<span class="cn">' + n.cn + "</span>" +
-        (n.common ? '<span class="common">' + n.common + "</span>" : "") + "</div>" +
+        (n.common ? '<span class="common">' + n.common + "</span>" : "") +
+        roleChips(u.shishen_id) + "</div>" +
       '<div class="rates">' +
         '<span class="win">thắng <b>' + pct(u.win_rate, 1) + "</b></span>" +
         "<span>chọn <b>" + pct(u.pick_rate, 1) + "</b></span>" +
@@ -2423,6 +2635,41 @@ __AVATAR_CSS__
     document.getElementById("block-hidden").hidden = true;
   }
 
+  /* ---------- BXH nguoi choi ---------- */
+
+  var PLAYERS = DATA.players || {};
+  var PLAYER_ROWS = PLAYERS.rows || [];
+
+  if (PLAYER_ROWS.length) {
+    var win = PLAYERS.window || ["", ""];
+    document.getElementById("players-note").textContent =
+      "Tuần " + win[0] + " → " + win[1] + ". Site trả về " +
+      intFmt.format(PLAYERS.total_rows || PLAYER_ROWS.length) + " dòng; hiện " +
+      intFmt.format(PLAYER_ROWS.length) + " người có từ " + (PLAYERS.min_matches || 20) +
+      " trận trở lên — dưới mức đó điểm và tỉ lệ thắng không nói được gì. " +
+      "Tên do chính người chơi đặt; “匿名战报” là các trường hợp tự chọn ẩn danh.";
+
+    document.getElementById("players").innerHTML = PLAYER_ROWS.map(function (r, i) {
+      var faces = (r.common_shishens || []).map(function (sid) {
+        var n = nameOf(sid);
+        return '<span class="av a' + sid + '" role="img" aria-label="' + n.vn + '" title="' + n.vn + '"></span>';
+      }).join("");
+      return '<div class="player-row"><span class="rk">' + (i + 1) + "</span>" +
+        '<span class="nm">' + r.name +
+          (r.verified ? '<span class="badge">đã xác thực</span>' : "") + "</span>" +
+        '<span class="sc">' + intFmt.format(Math.round(r.score)) + "</span>" +
+        '<span class="wr">' + pct(r.win_rate, 1) + "</span>" +
+        '<span class="mt">' + intFmt.format(r.total) + "</span>" +
+        '<span class="faces">' + faces + "</span></div>";
+    }).join("");
+
+    document.getElementById("tab-players").hidden = false;
+    TABS.push({ button: "tab-players", panel: "panel-players" });
+    document.getElementById("tab-players").addEventListener("click", function () {
+      selectTab("tab-players");
+    });
+  }
+
   /* ---------- shishen board ---------- */
 
   document.getElementById("board").innerHTML = BOARD.slice(0, 24).map(function (s) {
@@ -2450,6 +2697,8 @@ __AVATAR_CSS__
       '<td class="num">' + s.teams + "</td>" +
       '<td class="num">' + intFmt.format(s.matches) + "</td>" +
       '<td class="num">' + pct(s.win_rate, 1) + "</td>" +
+      '<td class="num">' + (heatOf(s.id).picks ? intFmt.format(heatOf(s.id).picks) : "—") + "</td>" +
+      '<td class="num">' + (heatOf(s.id).bans ? intFmt.format(heatOf(s.id).bans) : "—") + "</td>" +
       '<td class="num">' + s.id + "</td>" +
       "</tr>";
   }).join("");

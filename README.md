@@ -18,6 +18,10 @@ Site là SPA (Vue + Vite), toàn bộ dữ liệu đến từ REST API cùng dom
 | `GET /api/asset/shishen_stats` | chỉ số gốc của 273 式神 |
 | `GET /api/asset/yuhun` | 79 ngự hồn: tên, icon, hiệu ứng bộ |
 | `GET /api/asset/server` | map `server_id` → tên server |
+| `GET /api/shishen/tag/all` + `/api/asset/tag` | nhãn vai trò 式神 (输出, 拉条, 护盾…) |
+| `GET /api/statistic` | tổng số trận, 7 ngày gần nhất, phân bố người chơi theo đoạn |
+| `GET /api/asset/heat` | `picks`/`bans` số tuyệt đối của 200 式神 |
+| `GET /api/user-report/rank-top-100` | BXH 100 người chơi — **cần đăng nhập** (free là đủ) |
 
 Envelope trả về: `{"success": bool, "data": ..., "error": str}`.
 
@@ -240,6 +244,7 @@ lần build — kể cả trên CI, nơi không có token.
 python3 crawl_shishen_detail.py                  # dùng .token nếu có
 python3 crawl_team_detail.py --top 40 --by total
 python3 crawl_team_yuhun.py --top 40 --by total
+python3 crawl_player_board.py
 python3 export_paid.py                           # -> prebuilt/paid.json
 git add prebuilt/paid.json && git commit -m "chore: cập nhật dữ liệu hội viên" && git push
 ```
@@ -309,6 +314,36 @@ Tab 式神 vẫn dùng ô text thường: chỉ 42 dòng nên render mỗi keyst
 `keydown` trên cùng ô. Picker đóng popup trước, listener sau thấy popup đã đóng nên
 bấm nút Lọc → render mỗi lần thêm chip. Fix bằng cờ `event.pickerCommitted`.
 
+### Bốn nguồn dữ liệu bổ sung
+
+Quét lại **toàn bộ 62 chunk lazy-load** (trước chỉ quét `main.js`) thì site có **92
+endpoint**, không phải 32. Phân loại:
+
+| Nhóm | Số lượng | Ghi chú |
+|---|---|---|
+| Đã dùng | 13 | |
+| Mở, chưa dùng | 4 | `announcement`, và 3 cái đã thêm bên dưới |
+| Cần đăng nhập / `basic` | 3 | gồm `rank-top-100`, `asset/user-tag` |
+| Cần `pro` 18元 | 7 | `user-report/rank`, `assist/recommend`, 4 endpoint AI |
+| Chỉ dữ liệu của chính bạn | 25 | `/api/report2/*` — trận bạn tự nhập |
+| Mind map chiến thuật của bạn | 14 | `/api/strategy/*` |
+| Công cụ tra cứu tương tác | 10 | cần chọn team1/team2 |
+| Tag CRUD, admin, auth | 16 | ghi hoặc bị chặn |
+
+**Nhãn vai trò** (`crawl_extras.py`) là phần giá trị nhất: site có 81 nhãn, 70 được
+gắn thật. Nhóm `system: true` là từ vựng chức năng do site chuẩn hoá; nhóm
+`system: false` phần lớn là meme và có cả từ tục (畜生, 死妈, 涩图). `onmyoji/tags.py`
+chỉ giữ nhóm system cộng 3 nhãn cơ chế rõ ràng (`治疗或恢复`, `自拉条`, `回合外特攻`)
+— **43 nhãn**, phủ 89 式神. 34 nhãn còn lại bị bỏ và CLI in ra danh sách để biết.
+
+Nhãn dịch theo **nghĩa**, không theo âm Hán-Việt: `拉条` → "Kéo thanh" chứ không phải
+"Lạp Điều". Tô ba màu theo nhóm: sát thương (cam), chống chịu (xanh), khống chế (vàng).
+
+⚠️ `/api/user-report/rank-top-100` **không mở** — lần dò đầu mình truyền token cho mọi
+endpoint nên tưởng nó mở. Nó trả `401 请登录后使用本功能`, nên nằm ở
+`crawl_player_board.py` (cần token) và đi cùng khối `prebuilt/paid.json`, không phải
+khối CI crawl. Lọc từ 20 trận: 96/100 dòng đạt ngưỡng.
+
 ### Màu thanh chênh lệch
 
 Cặp đối cực đã validate bằng `dataviz/validate_palette.js`:
@@ -365,6 +400,8 @@ crawl_shishen_rank.py   # CLI crawl bảng xếp hạng 式神
 crawl_shishen_detail.py # CLI crawl trend + đội hình theo 式神
 crawl_team_detail.py    # CLI chi tiết đội hình — CẦN hội viên basic
 crawl_team_yuhun.py     # CLI ngự hồn theo đội hình — CẦN basic, gộp ngay khi crawl
+crawl_extras.py         # CLI nhãn vai trò + thống kê site + độ nóng (endpoint mở)
+crawl_player_board.py   # CLI BXH người chơi — cần đăng nhập
 export_paid.py          # gom dữ liệu hội viên -> prebuilt/paid.json để commit
 save-token.sh           # lưu token từ clipboard, có kiểm tra định dạng
 build_report.py         # CLI dựng báo cáo HTML
@@ -375,6 +412,8 @@ onmyoji/shishen_rank.py # ShishenRankQuery + nhãn cột/tier/hiệu ứng bộ
 onmyoji/shishen_detail.py # ShishenDetailQuery: trend + teams
 onmyoji/team_detail.py  # /api/team/detail (cần basic)
 onmyoji/team_yuhun.py   # /api/team/yuhun + gộp theo cặp (式神, ngự hồn)
+onmyoji/tags.py         # nhãn vai trò: lọc system, dịch theo nghĩa
+onmyoji/site_stats.py   # /api/statistic, /api/asset/heat, BXH người chơi
 onmyoji/auth.py         # đọc token từ ONMYOJI_TOKEN hoặc .token, không bao giờ log
 onmyoji/yys.py          # 6 âm dương sư (yys_id 1-6 và 10-16 cùng trỏ về 6 nhân vật)
 onmyoji/output.py       # chuẩn hoá bản ghi, ghi JSON/CSV
