@@ -1088,11 +1088,15 @@ td.pic { width: 46px; }
 
 /* ---------- tab nguoi choi ---------- */
 
-.player-row {
+.player-row,
+.player-head {
   display: grid;
   grid-template-columns: 40px minmax(0, 1fr) 66px 60px 56px minmax(0, 150px);
   gap: 12px;
   align-items: center;
+}
+
+.player-row {
   padding: 8px 4px;
   border-bottom: 1px solid var(--hairline-soft);
   font-family: var(--f-data);
@@ -1102,6 +1106,25 @@ td.pic { width: 46px; }
 }
 
 .player-row:hover { background: var(--surface); }
+
+/* Hàng tiêu đề: dùng đúng grid của .player-row nên các cột thẳng tuyệt đối. */
+.player-head {
+  position: sticky;
+  top: 0;
+  z-index: 4;
+  background: var(--ground);
+  border-bottom: 1px solid var(--hairline);
+  padding: 10px 4px;
+  font-family: var(--f-data);
+  font-size: 10px;
+  letter-spacing: 0.13em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.player-head span { white-space: nowrap; }
+.player-head .rk, .player-head .sc, .player-head .wr, .player-head .mt { text-align: right; }
+.player-head .cn { font-family: var(--f-cjk); letter-spacing: 0.04em; text-transform: none; }
 .player-row .rk { text-align: right; }
 .player-row .nm { font-family: var(--f-body); font-size: 13px; color: var(--ink); overflow-wrap: anywhere; }
 .player-row .nm .badge {
@@ -1122,8 +1145,10 @@ td.pic { width: 46px; }
 @media (max-width: 900px) {
   .context { grid-template-columns: minmax(0, 1fr); gap: 22px; }
   .bracket-row { grid-template-columns: 118px minmax(0, 1fr) 50px 40px; }
-  .player-row { grid-template-columns: 34px minmax(0, 1fr) 60px 54px; }
-  .player-row .mt, .player-row .faces { display: none; }
+  .player-row,
+  .player-head { grid-template-columns: 34px minmax(0, 1fr) 60px 54px; }
+  .player-row .mt, .player-row .faces,
+  .player-head .mt, .player-head .faces { display: none; }
 }
 
 /* ---------- tab nav ---------- */
@@ -2649,18 +2674,31 @@ __AVATAR_CSS__
       " trận trở lên — dưới mức đó điểm và tỉ lệ thắng không nói được gì. " +
       "Tên do chính người chơi đặt; “匿名战报” là các trường hợp tự chọn ẩn danh.";
 
-    document.getElementById("players").innerHTML = PLAYER_ROWS.map(function (r, i) {
+    var playerHead = '<div class="player-head" role="row">' +
+      '<span class="rk" role="columnheader">#</span>' +
+      '<span class="nm" role="columnheader">Người chơi</span>' +
+      '<span class="sc" role="columnheader" title="điểm đấu kỹ trong tuần">Điểm</span>' +
+      '<span class="wr" role="columnheader">Thắng</span>' +
+      '<span class="mt" role="columnheader">Trận</span>' +
+      '<span class="faces" role="columnheader">式神 hay dùng <span class="cn">常用</span></span>' +
+      "</div>";
+
+    document.getElementById("players").setAttribute("role", "table");
+    document.getElementById("players").setAttribute("aria-label", "Bảng xếp hạng người chơi");
+
+    document.getElementById("players").innerHTML = playerHead + PLAYER_ROWS.map(function (r, i) {
       var faces = (r.common_shishens || []).map(function (sid) {
         var n = nameOf(sid);
         return '<span class="av a' + sid + '" role="img" aria-label="' + n.vn + '" title="' + n.vn + '"></span>';
       }).join("");
-      return '<div class="player-row"><span class="rk">' + (i + 1) + "</span>" +
-        '<span class="nm">' + r.name +
+      return '<div class="player-row" role="row">' +
+        '<span class="rk" role="cell">' + (i + 1) + "</span>" +
+        '<span class="nm" role="cell">' + r.name +
           (r.verified ? '<span class="badge">đã xác thực</span>' : "") + "</span>" +
-        '<span class="sc">' + intFmt.format(Math.round(r.score)) + "</span>" +
-        '<span class="wr">' + pct(r.win_rate, 1) + "</span>" +
-        '<span class="mt">' + intFmt.format(r.total) + "</span>" +
-        '<span class="faces">' + faces + "</span></div>";
+        '<span class="sc" role="cell">' + intFmt.format(Math.round(r.score)) + "</span>" +
+        '<span class="wr" role="cell">' + pct(r.win_rate, 1) + "</span>" +
+        '<span class="mt" role="cell">' + intFmt.format(r.total) + "</span>" +
+        '<span class="faces" role="cell">' + faces + "</span></div>";
     }).join("");
 
     document.getElementById("tab-players").hidden = false;
