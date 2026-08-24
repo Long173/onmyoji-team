@@ -240,14 +240,17 @@ section.block { padding-top: 56px; }
 }
 
 .field input[type="search"],
+.field input[type="text"],
 .field select {
+  box-sizing: border-box;
+  height: 34px;
   font-family: var(--f-body);
   font-size: 14px;
   color: var(--ink);
   background: var(--surface);
   border: 1px solid var(--hairline);
   border-radius: 2px;
-  padding: 7px 10px;
+  padding: 0 10px;
 }
 
 .field input[type="search"] { min-width: 200px; }
@@ -340,7 +343,8 @@ section.block { padding-top: 56px; }
   align-items: center;
   min-width: 250px;
   min-height: 34px;
-  padding: 4px 6px;
+  box-sizing: border-box;
+  padding: 3px 6px;
   background: var(--surface);
   border: 1px solid var(--hairline);
   border-radius: 2px;
@@ -349,16 +353,18 @@ section.block { padding-top: 56px; }
 .picker-box:focus-within { border-color: var(--jade); }
 .picker.exclude .picker-box:focus-within { border-color: var(--chart-neg); }
 
-.picker-box input {
+.picker-box input,
+.field .picker-box input[type="text"] {
   flex: 1 1 90px;
   min-width: 90px;
+  height: 26px;
   border: none;
   background: none;
   outline: none;
   color: var(--ink);
   font-family: var(--f-body);
   font-size: 13.5px;
-  padding: 2px 0;
+  padding: 0;
 }
 
 .sel-chip {
@@ -429,6 +435,8 @@ section.block { padding-top: 56px; }
 
 .apply-btn {
   appearance: none;
+  box-sizing: border-box;
+  height: 34px;
   border: 1px solid var(--jade);
   background: var(--surface);
   color: var(--ink);
@@ -437,7 +445,7 @@ section.block { padding-top: 56px; }
   font-family: var(--f-body);
   font-size: 13.5px;
   font-weight: 500;
-  padding: 7px 16px;
+  padding: 0 18px;
 }
 
 .apply-btn:hover { background: var(--surface-2); }
@@ -449,11 +457,17 @@ section.block { padding-top: 56px; }
 
 .apply-btn:disabled { opacity: 0.5; cursor: default; box-shadow: none; }
 
+/* Đứng ở vị trí của <label> trong các ô khác, nên phải cùng metric để đáy
+   của ô nút trùng đáy các input (thanh điều khiển dùng align-items: flex-end). */
 .apply-note {
   font-family: var(--f-data);
-  font-size: 10.5px;
+  font-size: 10px;
+  /* 10px x 1.6 = 16px, đúng bằng <label> (kế thừa line-height 1.6 từ body). */
+  line-height: 1.6;
+  letter-spacing: 0.02em;
   color: var(--gold);
-  min-height: 13px;
+  min-height: 16px;
+  white-space: nowrap;
 }
 
 .result-count {
@@ -1250,8 +1264,8 @@ __AVATAR_CSS__
         </div>
       </div>
       <div class="field">
-        <button type="button" class="apply-btn" id="apply-teams" disabled>Lọc</button>
         <span class="apply-note" id="apply-note-teams"></span>
+        <button type="button" class="apply-btn" id="apply-teams" disabled>Lọc</button>
       </div>
       <div class="field">
         <label for="sort">Sắp xếp</label>
@@ -1354,8 +1368,8 @@ __AVATAR_CSS__
         </div>
       </div>
       <div class="field">
-        <button type="button" class="apply-btn" id="apply-hidden" disabled>Lọc</button>
         <span class="apply-note" id="apply-note-hidden"></span>
+        <button type="button" class="apply-btn" id="apply-hidden" disabled>Lọc</button>
       </div>
       <div class="field">
         <label for="hmin">Số trận tối thiểu</label>
