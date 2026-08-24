@@ -24,6 +24,7 @@ from onmyoji.report import build_paid_payload, paid_payload_is_empty
 DEFAULT_RANK = Path("out/shishen-rank-current.json")
 DEFAULT_UNIT_DETAIL = Path("out/shishen-detail-current.json")
 DEFAULT_TEAM_DETAIL = Path("out/team-detail-current.json")
+DEFAULT_TEAM_YUHUN = Path("out/team-yuhun-current.json")
 DEFAULT_OUTPUT = Path("prebuilt/paid.json")
 
 
@@ -43,6 +44,7 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--rank", type=Path, default=DEFAULT_RANK, help="file của crawl_shishen_rank.py")
     parser.add_argument("--unit-detail", type=Path, default=DEFAULT_UNIT_DETAIL, help="file của crawl_shishen_detail.py")
     parser.add_argument("--team-detail", type=Path, default=DEFAULT_TEAM_DETAIL, help="file của crawl_team_detail.py")
+    parser.add_argument("--team-yuhun", type=Path, default=DEFAULT_TEAM_YUHUN, help="file của crawl_team_yuhun.py")
     parser.add_argument("--output", type=Path, default=DEFAULT_OUTPUT, help="file JSON xuất ra để commit")
     return parser
 
@@ -53,12 +55,13 @@ def main(argv: list[str] | None = None) -> int:
     rank = _load(args.rank, "bảng xếp hạng 式神")
     unit_detail = _load(args.unit_detail, "chi tiết 式神")
     team_detail = _load(args.team_detail, "chi tiết đội hình")
+    team_yuhun = _load(args.team_yuhun, "ngự hồn theo đội hình")
 
     if rank is None or unit_detail is None:
         print("Thiếu dữ liệu bắt buộc — chạy crawl trước.", file=sys.stderr)
         return 2
 
-    paid = build_paid_payload(unit_detail, rank, team_detail)
+    paid = build_paid_payload(unit_detail, rank, team_detail, team_yuhun)
     if paid_payload_is_empty(paid):
         print(
             "Khối dữ liệu hội viên rỗng. Token có thuộc hội viên basic không? "
@@ -75,9 +78,11 @@ def main(argv: list[str] | None = None) -> int:
 
     units = len(((paid.get("paid") or {}).get("units")) or {})
     teams = len(((paid.get("team_paid") or {}).get("teams")) or {})
+    yuhun_teams = len(((paid.get("team_yuhun") or {}).get("teams")) or {})
     size_kb = args.output.stat().st_size / 1024
     print(
-        f"Xong: {units} 式神 + {teams} đội hình -> {args.output} ({size_kb:.0f} KB). "
+        f"Xong: {units} 式神 + {teams} đội hình (+{yuhun_teams} có ngự hồn) "
+        f"-> {args.output} ({size_kb:.0f} KB). "
         "Commit file này để CI trộn vào bản build hằng ngày.",
         file=sys.stderr,
     )

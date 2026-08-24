@@ -13,6 +13,7 @@ Site là SPA (Vue + Vite), toàn bộ dữ liệu đến từ REST API cùng dom
 | `GET /api/shishen/rank` | xếp hạng 式神: tier, chọn/ban/thắng, ngự hồn thường dùng, counter |
 | `GET /api/shishen/detail` | `trend` 33 ngày + `summary.teams`; thêm ngự hồn/ghép cặp/vị trí nếu có hội viên |
 | `GET /api/team/detail` | thứ tự BP, âm dương sư, đội hình đối đầu — **cần hội viên `basic`** |
+| `GET /api/team/yuhun` | ngự hồn của cả đội theo tổ hợp — **cần `basic`**, phải gộp lại mới dùng được |
 | `GET /api/asset/shishen` | map `shishen_id` → tên 式神 |
 | `GET /api/asset/shishen_stats` | chỉ số gốc của 273 式神 |
 | `GET /api/asset/yuhun` | 79 ngự hồn: tên, icon, hiệu ứng bộ |
@@ -238,6 +239,7 @@ lần build — kể cả trên CI, nơi không có token.
 ./save-token.sh                                  # sau khi đăng nhập lại yysrank.win
 python3 crawl_shishen_detail.py                  # dùng .token nếu có
 python3 crawl_team_detail.py --top 40 --by total
+python3 crawl_team_yuhun.py --top 40 --by total
 python3 export_paid.py                           # -> prebuilt/paid.json
 git add prebuilt/paid.json && git commit -m "chore: cập nhật dữ liệu hội viên" && git push
 ```
@@ -251,6 +253,33 @@ Muốn dựng bản không có dữ liệu hội viên: `build_report.py --no-pa
 
 `.token`, `.refresh-token`, `out/`, `report/`, `site/` gitignored — chỉ
 `prebuilt/paid.json` được commit.
+
+### `/api/team/yuhun`: phải gộp mới dùng được
+
+Endpoint trả tối đa **50 tổ hợp ngự hồn hoàn chỉnh** cho cả đội (mỗi 式神 một bộ),
+kèm `win_rate` + `total`. Tham số: `team1`, `team2` (để `[]` — có team2 cụ thể thì
+gần như luôn trả 0 dòng), `all_suits`, cùng bộ filter thời gian/đoạn.
+
+Dùng trực tiếp thì vô nghĩa: **median 3 trận/tổ hợp**, cao nhất 24. Cách dùng được là
+gộp theo cặp (式神, ngự hồn), cộng dồn `total` và tính tỉ lệ thắng gia quyền — khi gộp,
+các lựa chọn phổ biến đạt 100–354 trận.
+
+Đo trên 40 đội hình:
+
+| | |
+|---|---|
+| Lựa chọn đạt ngưỡng 30 trận | 182 (median 5/đội, 8 đội không có gì) |
+| Số trận mỗi lựa chọn | median 54, max 354 |
+| Đủ mẫu để hiện tỉ lệ thắng (≥50) | 103/182 — 79 cái hiện dấu `—` |
+| Độ phủ so với tổng trận của đội | median **4,1%** (API cắt ở top 50 tổ hợp) |
+
+⚠️ Hai giới hạn phải nêu kèm khi trình bày, và trang có ghi:
+1. Chỉ phủ ~4% số trận của đội.
+2. Mẫu **lệch về tổ hợp phổ biến** — một bộ hay dùng trong nhiều tổ hợp hiếm sẽ bị
+   đếm thiếu. Đây là chỉ dấu "bộ hay dùng", không phải tỉ lệ tuyệt đối.
+
+Đối chiếu với ngự hồn meta-wide ở tab 式神 (mẫu hàng nghìn trận): 3/5 vị trí khớp,
+2 vị trí khác — phần khác nhau mới là thứ đáng xem, nhưng cũng có thể là do mẫu lệch.
 
 ### Màu thanh chênh lệch
 
@@ -307,6 +336,8 @@ crawl_team_rank.py      # CLI crawl bảng đội hình
 crawl_shishen_rank.py   # CLI crawl bảng xếp hạng 式神
 crawl_shishen_detail.py # CLI crawl trend + đội hình theo 式神
 crawl_team_detail.py    # CLI chi tiết đội hình — CẦN hội viên basic
+crawl_team_yuhun.py     # CLI ngự hồn theo đội hình — CẦN basic, gộp ngay khi crawl
+export_paid.py          # gom dữ liệu hội viên -> prebuilt/paid.json để commit
 save-token.sh           # lưu token từ clipboard, có kiểm tra định dạng
 build_report.py         # CLI dựng báo cáo HTML
 onmyoji/http.py         # GET JSON + retry + validate envelope
@@ -315,6 +346,7 @@ onmyoji/team_rank.py    # TeamRankQuery (immutable) + phân trang
 onmyoji/shishen_rank.py # ShishenRankQuery + nhãn cột/tier/hiệu ứng bộ
 onmyoji/shishen_detail.py # ShishenDetailQuery: trend + teams
 onmyoji/team_detail.py  # /api/team/detail (cần basic)
+onmyoji/team_yuhun.py   # /api/team/yuhun + gộp theo cặp (式神, ngự hồn)
 onmyoji/auth.py         # đọc token từ ONMYOJI_TOKEN hoặc .token, không bao giờ log
 onmyoji/yys.py          # 6 âm dương sư (yys_id 1-6 và 10-16 cùng trỏ về 6 nhân vật)
 onmyoji/output.py       # chuẩn hoá bản ghi, ghi JSON/CSV

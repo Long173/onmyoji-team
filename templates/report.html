@@ -768,6 +768,48 @@ td.pic { width: 46px; }
 .danger-row .wr { text-align: right; color: var(--chart-neg); }
 .danger-row .mt { text-align: right; }
 
+.tyh-group + .tyh-group { margin-top: 9px; }
+
+.tyh-head {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-family: var(--f-body);
+  font-size: 12.5px;
+  color: var(--ink-soft);
+  margin-bottom: 3px;
+}
+
+.tyh-head .av { width: 24px; height: 24px; }
+
+.tyh-row {
+  display: grid;
+  grid-template-columns: 24px 26px minmax(0, 1fr) 46px 46px 54px;
+  gap: 8px;
+  align-items: center;
+  padding: 2px 0 2px 7px;
+  font-family: var(--f-data);
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+  color: var(--muted);
+}
+
+.tyh-row .yh { width: 26px; height: 26px; }
+.tyh-row .nm { font-family: var(--f-body); font-size: 12px; color: var(--ink-soft); overflow-wrap: anywhere; }
+.tyh-row .sh, .tyh-row .wr, .tyh-row .mt { text-align: right; }
+.tyh-row .wr { color: var(--ink-soft); }
+.tyh-row .wr.none { color: var(--muted); }
+
+.tyh-caveat {
+  font-family: var(--f-data);
+  font-size: 10.5px;
+  line-height: 1.45;
+  color: var(--muted);
+  margin-top: 8px;
+  padding-left: 7px;
+  border-left: 1px solid var(--hairline);
+}
+
 @media (max-width: 900px) {
   .team-detail { grid-template-columns: minmax(0, 1fr); gap: 18px; }
 }
@@ -1317,9 +1359,56 @@ __AVATAR_CSS__
     return y.vn + (y.common ? ' <em>· ' + y.common + "</em>" : "");
   }
 
+  var TEAM_YUHUN = (DATA.team_yuhun && DATA.team_yuhun.teams) || {};
+  var TEAM_YUHUN_META = DATA.team_yuhun || {};
+
+  function teamYuhunBlock(ids) {
+    var row = TEAM_YUHUN[teamKey(ids)];
+    if (!row || !row.options || !row.options.length) return "";
+
+    var byShishen = {};
+    row.options.forEach(function (o) {
+      (byShishen[o.shishen_id] = byShishen[o.shishen_id] || []).push(o);
+    });
+
+    var groups = ids.filter(function (sid) { return byShishen[sid]; }).map(function (sid) {
+      var n = nameOf(sid);
+      var rows = byShishen[sid].map(function (o) {
+        var y = yuhunMeta(String(o.yuhun_id));
+        var wr = o.win_rate == null
+          ? '<span class="wr none" title="dưới ' + (TEAM_YUHUN_META.min_win_rate_matches || 50) + ' trận, chưa đủ mẫu">—</span>'
+          : '<span class="wr">' + pct(o.win_rate, 1) + "</span>";
+        return '<div class="tyh-row"><span></span>' +
+          '<span class="yh y' + o.yuhun_id + '" role="img" aria-label="' + y.vn + '" title="' + y.cn + '"></span>' +
+          '<span class="nm">' + y.vn + "</span>" +
+          '<span class="sh">' + pct(o.share, 0) + "</span>" +
+          wr +
+          '<span class="mt">' + intFmt.format(o.total) + "</span></div>";
+      }).join("");
+      return '<div class="tyh-group"><div class="tyh-head">' +
+        '<span class="av a' + sid + '" role="img" aria-label="' + n.vn + '"></span>' +
+        "<span>" + n.vn + "</span></div>" + rows + "</div>";
+    }).join("");
+
+    var coverage = row.team_total
+      ? pct(row.covered_matches / row.team_total, 1)
+      : "?";
+
+    return '<div class="panel-block"><h4>Ngự hồn trong đội · 御魂 <span style="text-transform:none">(dùng / thắng / trận)</span></h4>' +
+      groups +
+      '<p class="tyh-caveat">API chỉ trả ' + intFmt.format(row.combos) +
+      " tổ hợp ngự hồn phổ biến nhất của cả đội, phủ " + coverage +
+      " số trận — nên đây là <b>chỉ dấu về bộ hay dùng</b>, không phải tỉ lệ tuyệt đối. " +
+      "Lọc từ " + (TEAM_YUHUN_META.min_usage_matches || 30) + " trận; tỉ lệ thắng chỉ hiện từ " +
+      (TEAM_YUHUN_META.min_win_rate_matches || 50) + " trận. Số liệu ngự hồn theo từng 式神 " +
+      "ở tab 式神 có mẫu lớn hơn nhiều.</p></div>";
+  }
+
   function teamDetailPanel(ids) {
     var paid = TEAM_PAID[teamKey(ids)];
-    if (!paid) return "";
+    var yuhunBlock = teamYuhunBlock(ids);
+    if (!paid && !yuhunBlock) return "";
+    paid = paid || { orders: [], yys: [], counters: [] };
 
     var orders = (paid.orders || []).map(function (r, i) {
       var chain = r.sequence.map(function (sid, k) {
@@ -1354,6 +1443,7 @@ __AVATAR_CSS__
       ? '<div class="panel-block"><h4>Thứ tự pick · 选取顺序 (≥' +
         intFmt.format(TEAM_PAID_META.min_order_matches || 100) + " trận)</h4>" + orders + "</div>"
       : "";
+    left += yuhunBlock;
     var right = "";
     if (yysRows) {
       right += '<div class="panel-block"><h4>Âm dương sư · 阴阳师 <span style="text-transform:none">(thắng / chọn / trận)</span></h4>' +
@@ -1378,7 +1468,8 @@ __AVATAR_CSS__
   }
 
   function hasDetail(team) {
-    return Boolean(TEAM_PAID[teamKey(team.team_ids)]);
+    var key = teamKey(team.team_ids);
+    return Boolean(TEAM_PAID[key] || TEAM_YUHUN[key]);
   }
 
   function render() {
@@ -1637,7 +1728,8 @@ __AVATAR_CSS__
   })();
 
   function yuhunMeta(id) {
-    return YUHUN_ALL[id] || YUHUN[id] || { vn: "#" + id, cn: "", suit_type: "" };
+    return (DATA.yuhun_all || {})[id] || (DATA.yuhun || {})[id] ||
+      { vn: "#" + id, cn: "", suit_type: "" };
   }
 
   function deltaBar(delta) {

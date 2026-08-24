@@ -403,9 +403,15 @@ def _paid_section(
 
 
 def paid_yuhun_ids(payload: Mapping[str, Any]) -> tuple[int, ...]:
-    """Các yuhun_id cần icon cho phần dữ liệu hội viên."""
+    """Các yuhun_id cần icon cho phần dữ liệu hội viên (gồm cả ngự hồn theo đội)."""
     units = ((payload.get("paid") or {}).get("units")) or {}
     found = {int(row["yuhun_id"]) for unit in units.values() for row in unit.get("yuhuns") or ()}
+    teams = ((payload.get("team_yuhun") or {}).get("teams")) or {}
+    found |= {
+        int(option["yuhun_id"])
+        for team in teams.values()
+        for option in team.get("options") or ()
+    }
     return tuple(sorted(found))
 
 
@@ -509,13 +515,14 @@ def team_paid_shishen_ids(payload: Mapping[str, Any]) -> tuple[int, ...]:
     return tuple(sorted(found))
 
 
-PAID_PAYLOAD_KEYS = ("paid", "team_paid", "yuhun_all", "yys")
+PAID_PAYLOAD_KEYS = ("paid", "team_paid", "team_yuhun", "yuhun_all", "yys")
 
 
 def build_paid_payload(
     unit_detail: Mapping[str, Any] | None,
     unit_rank: Mapping[str, Any] | None,
     team_detail: Mapping[str, Any] | None,
+    team_yuhun: Mapping[str, Any] | None = None,
 ) -> Mapping[str, Any]:
     """Gom toàn bộ phần dữ liệu hội viên thành một khối để commit rồi trộn lại sau.
 
@@ -525,6 +532,7 @@ def build_paid_payload(
     return {
         **_paid_section(unit_detail, unit_rank, include_paid=True),
         **_team_paid_section(team_detail, include_paid=True),
+        **_team_yuhun_section(team_yuhun),
     }
 
 
@@ -533,7 +541,8 @@ def paid_payload_is_empty(paid_payload: Mapping[str, Any] | None) -> bool:
         return True
     units = ((paid_payload.get("paid") or {}).get("units")) or {}
     teams = ((paid_payload.get("team_paid") or {}).get("teams")) or {}
-    return not units and not teams
+    yuhun = ((paid_payload.get("team_yuhun") or {}).get("teams")) or {}
+    return not units and not teams and not yuhun
 
 
 def paid_payload_shishen_ids(paid_payload: Mapping[str, Any]) -> tuple[int, ...]:
@@ -548,4 +557,50 @@ def paid_payload_shishen_ids(paid_payload: Mapping[str, Any]) -> tuple[int, ...]
             found.update(int(i) for i in row.get("team_ids") or ())
         for row in team.get("orders") or ():
             found.update(int(i) for i in row.get("sequence") or ())
+    return tuple(sorted(found))
+
+
+def _team_yuhun_section(team_yuhun: Mapping[str, Any] | None) -> Mapping[str, Any]:
+    """Ngự hồn theo đội hình, đã gộp sẵn bởi onmyoji/team_yuhun.py.
+
+    Giữ nguyên `win_rate = None` cho các lựa chọn chưa đủ mẫu — trang phải hiện
+    dấu gạch chứ không được bịa số.
+    """
+    entries = (team_yuhun or {}).get("teams") or []
+    if not entries:
+        return {"team_yuhun": {}}
+
+    rows: dict[str, Any] = {}
+    for entry in entries:
+        options = entry.get("options") or []
+        if not options:
+            continue
+        rows[team_key(entry.get("team_ids") or ())] = {
+            "options": [dict(o) for o in options],
+            "covered_matches": int(entry.get("covered_matches") or 0),
+            "team_total": int(entry.get("team_total") or 0),
+            "combos": int(entry.get("combos") or 0),
+        }
+
+    if not rows:
+        return {"team_yuhun": {}}
+
+    meta = (team_yuhun or {}).get("metadata") or {}
+    return {
+        "team_yuhun": {
+            "teams": rows,
+            "min_usage_matches": int(meta.get("min_usage_matches") or 30),
+            "min_win_rate_matches": int(meta.get("min_win_rate_matches") or 50),
+        }
+    }
+
+
+def team_yuhun_ids(paid_payload: Mapping[str, Any]) -> tuple[int, ...]:
+    """Ngự hồn cần icon cho phần ngự hồn theo đội hình."""
+    teams = ((paid_payload.get("team_yuhun") or {}).get("teams")) or {}
+    found = {
+        int(option["yuhun_id"])
+        for team in teams.values()
+        for option in team.get("options") or ()
+    }
     return tuple(sorted(found))
