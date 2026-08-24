@@ -2,7 +2,7 @@
 """CLI crawl ngự hồn theo đội hình (`/api/team/yuhun`) — cần hội viên `basic`.
 
 Dữ liệu thô từng tổ hợp quá phân mảnh (median 3 trận) nên module gộp ngay theo
-cặp (式神, ngự hồn) và chỉ giữ lựa chọn từ 30 trận trở lên. Xem onmyoji/team_yuhun.py.
+cặp (Thức thần, ngự hồn) và chỉ giữ lựa chọn từ 30 trận trở lên. Xem onmyoji/team_yuhun.py.
 
 Ví dụ:
     python3 crawl_team_yuhun.py                    # 40 đội nhiều trận nhất
@@ -138,7 +138,7 @@ def main(argv: list[str] | None = None) -> int:
             "note": (
                 "API chỉ trả top 50 tổ hợp ngự hồn của cả đội nên chỉ phủ ~4-5% số trận "
                 "và mẫu lệch về các tổ hợp phổ biến. Số liệu đã gộp theo cặp "
-                f"(式神, ngự hồn), lọc từ {MIN_USAGE_MATCHES} trận; tỉ lệ thắng chỉ hiện "
+                f"(Thức thần, ngự hồn), lọc từ {MIN_USAGE_MATCHES} trận; tỉ lệ thắng chỉ hiện "
                 f"từ {MIN_WIN_RATE_MATCHES} trận trở lên."
             ),
             "params": dict(query.params_for(results[0]["team_ids"])),

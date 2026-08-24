@@ -332,7 +332,7 @@ section.block { padding-top: 56px; }
   font-variant-numeric: tabular-nums;
 }
 
-/* ---------- o chon 式神 co goi y ---------- */
+/* ---------- o chon Thức thần co goi y ---------- */
 
 .picker { position: relative; display: flex; flex-direction: column; gap: 5px; }
 
@@ -1188,7 +1188,7 @@ td.pic { width: 46px; }
 
 .tab-panel[hidden] { display: none; }
 
-/* ---------- bang 式神 ---------- */
+/* ---------- bang Thức thần ---------- */
 
 .unit-card {
   display: grid;
@@ -1354,7 +1354,7 @@ __AVATAR_CSS__
     <h1>Meta Đấu Kỹ Onmyoji</h1>
     <p class="standfirst">
       Toàn bộ đội hình đấu kỹ có từ 100 trận trở lên trong phiên bản hiện tại, kèm tỉ lệ thắng
-      ngoại chiến, tỉ lệ chọn và thời lượng trung bình. Tên 式神 dịch theo âm Hán-Việt.
+      ngoại chiến, tỉ lệ chọn và thời lượng trung bình. Tên Thức thần dịch theo âm Hán-Việt.
     </p>
     <div class="provenance">
       <span>Nguồn: <a href="https://yysrank.win/#/query/team" rel="noreferrer">yysrank.win</a> · <code>/api/team/rank</code></span>
@@ -1384,7 +1384,7 @@ __AVATAR_CSS__
       Đội hình <span class="cn">阵容</span>
     </button>
     <button type="button" role="tab" id="tab-units" aria-controls="panel-units" aria-selected="false">
-      式神 <span class="cn">式神排行</span>
+      Thức thần <span class="cn">式神排行</span>
     </button>
     <button type="button" role="tab" id="tab-players" aria-controls="panel-players" aria-selected="false" hidden>
       Người chơi <span class="cn">战报排行</span>
@@ -1399,12 +1399,12 @@ __AVATAR_CSS__
     </div>
     <p class="block-note">
       Xếp theo tỉ lệ thắng giảm dần. Thanh đo trải trên khoảng 30–85%, tô đậm khi đội vượt mức
-      trung vị của meta. Nhập tên 式神 để chỉ xem đội hình có 式神 đó.
+      trung vị của meta. Nhập tên Thức thần để chỉ xem đội hình có Thức thần đó.
     </p>
 
     <div class="controls">
       <div class="field">
-        <label for="q">Có 式神 <span class="sub-hint">(chọn nhiều — phải có hết)</span></label>
+        <label for="q">Có Thức thần <span class="sub-hint">(chọn nhiều — phải có hết)</span></label>
         <div class="picker" id="pick-inc">
           <div class="picker-box">
             <input id="q" type="text" placeholder="gõ cat, tuu…" autocomplete="off"
@@ -1459,17 +1459,17 @@ __AVATAR_CSS__
 <div class="tab-panel" id="panel-units" role="tabpanel" aria-labelledby="tab-units" hidden>
   <section class="block">
     <div class="block-head">
-      <h2>Xếp hạng 式神</h2>
+      <h2>Xếp hạng Thức thần</h2>
       <span class="cn">式神排行</span>
     </div>
     <p class="block-note">
-      Tier do site tự tính (<b>T0</b> mạnh nhất). Chỉ số là <b>chỉ số gốc</b> của 式神, chưa tính ngự hồn.
+      Tier do site tự tính (<b>T0</b> mạnh nhất). Chỉ số là <b>chỉ số gốc</b> của Thức thần, chưa tính ngự hồn.
       Ngự hồn là <b>3 bộ hay dùng nhất</b> theo thứ tự — số liệu chi tiết hơn bị site khoá sau hội viên.
-      Cột cuối là 式神 mà nó khắc chế và bị khắc chế.
+      Cột cuối là Thức thần mà nó khắc chế và bị khắc chế.
     </p>
     <div class="controls">
       <div class="field">
-        <label for="uq">Tìm 式神 / ngự hồn</label>
+        <label for="uq">Tìm Thức thần / ngự hồn</label>
         <input id="uq" type="search" placeholder="Cát Diệp, 葛叶, Luân Nhập Đạo…" autocomplete="off">
       </div>
       <div class="field">
@@ -1508,7 +1508,7 @@ __AVATAR_CSS__
     <p class="hidden-note" id="hidden-note"></p>
     <div class="controls">
       <div class="field">
-        <label for="hq">Có 式神 <span class="sub-hint">(chọn nhiều — phải có hết)</span></label>
+        <label for="hq">Có Thức thần <span class="sub-hint">(chọn nhiều — phải có hết)</span></label>
         <div class="picker" id="hpick-inc">
           <div class="picker-box">
             <input id="hq" type="text" placeholder="gõ hoang, cat…" autocomplete="off"
@@ -1545,11 +1545,11 @@ __AVATAR_CSS__
 
   <section class="block">
     <div class="block-head">
-      <h2>式神 trong meta đội hình</h2>
+      <h2>Thức thần trong meta đội hình</h2>
       <span class="cn">式神热度</span>
     </div>
     <p class="block-note">
-      81 式神 xuất hiện trong các đội hình trên. Tỉ lệ thắng là bình quân gia quyền theo số trận,
+      81 Thức thần xuất hiện trong các đội hình trên. Tỉ lệ thắng là bình quân gia quyền theo số trận,
       nên phản ánh sức mạnh thực tế tốt hơn số liệu từng đội đơn lẻ.
     </p>
     <div class="board" id="board"></div>
@@ -1561,7 +1561,7 @@ __AVATAR_CSS__
       <span class="cn">式神名录</span>
     </div>
     <p class="block-note">
-      Tên gốc tiếng Trung, âm Hán-Việt (dịch theo từng ký tự nên phủ được cả 式神 mới),
+      Tên gốc tiếng Trung, âm Hán-Việt (dịch theo từng ký tự nên phủ được cả Thức thần mới),
       và tên thông dụng theo cộng đồng khi có.
     </p>
     <div class="table-wrap">
@@ -1601,7 +1601,7 @@ __AVATAR_CSS__
   <footer>
     <span id="foot-meta">—</span>
     <span id="foot-downloads" hidden></span>
-    <span>Ảnh 式神 và số liệu thuộc <span class="cjk">阳间斗技</span> (yysrank.win). Báo cáo sinh tự động từ API công khai.</span>
+    <span>Ảnh Thức thần và số liệu thuộc <span class="cjk">阳间斗技</span> (yysrank.win). Báo cáo sinh tự động từ API công khai.</span>
   </footer>
 </div>
 
@@ -1655,7 +1655,7 @@ __AVATAR_CSS__
   }
   document.getElementById("foot-meta").textContent =
     "Sinh lúc " + (META.generated_at || "—") + " · " + TEAMS.length + " đội hình · " +
-    BOARD.length + " 式神 · ngưỡng " + (META.thres || 0) + " trận";
+    BOARD.length + " Thức thần · ngưỡng " + (META.thres || 0) + " trận";
 
   var downloads = META.data_links || [];
   if (downloads.length) {
@@ -1827,8 +1827,8 @@ __AVATAR_CSS__
       " tổ hợp ngự hồn phổ biến nhất của cả đội, phủ " + coverage +
       " số trận — nên đây là <b>chỉ dấu về bộ hay dùng</b>, không phải tỉ lệ tuyệt đối. " +
       "Lọc từ " + (TEAM_YUHUN_META.min_usage_matches || 30) + " trận; tỉ lệ thắng chỉ hiện từ " +
-      (TEAM_YUHUN_META.min_win_rate_matches || 50) + " trận. Số liệu ngự hồn theo từng 式神 " +
-      "ở tab 式神 có mẫu lớn hơn nhiều.</p></div>";
+      (TEAM_YUHUN_META.min_win_rate_matches || 50) + " trận. Số liệu ngự hồn theo từng Thức thần " +
+      "ở tab Thức thần có mẫu lớn hơn nhiều.</p></div>";
   }
 
   function teamDetailPanel(ids) {
@@ -1883,7 +1883,7 @@ __AVATAR_CSS__
     return '<div class="team-detail" hidden>' + left + "<div>" + right + "</div></div>";
   }
 
-  /* ---------- loc nhieu 式神, co loai tru ----------
+  /* ---------- loc nhieu Thức thần, co loai tru ----------
      Gõ không dấu vẫn khớp: bỏ dấu phụ rồi hạ chữ thường cả hai phía.
      "Có" = AND từng từ khoá; "Không có" = OR (trùng một từ là loại). */
 
@@ -1915,7 +1915,7 @@ __AVATAR_CSS__
 
   var SUGGEST_LIMIT = 8;
 
-  /* Danh sách gợi ý: chỉ 式神 thật sự có trong dữ liệu, kèm số đội hình chứa nó
+  /* Danh sách gợi ý: chỉ Thức thần thật sự có trong dữ liệu, kèm số đội hình chứa nó
      để người chọn biết ngay từ khoá đó có bao nhiêu kết quả. */
   var SUGGEST_POOL = (function () {
     var counts = {};
@@ -1934,7 +1934,7 @@ __AVATAR_CSS__
     }).sort(function (a, b) { return b.teams - a.teams; });
   })();
 
-  /* Ô chọn 式神: gõ ra popup gợi ý, chọn thành chip. KHÔNG lọc khi gõ —
+  /* Ô chọn Thức thần: gõ ra popup gợi ý, chọn thành chip. KHÔNG lọc khi gõ —
      chỉ khi bấm nút, vì mỗi lần lọc là render lại toàn bộ bảng. */
   function createPicker(inputId, suggestId, onCommitChange) {
     var input = document.getElementById(inputId);
@@ -1986,7 +1986,7 @@ __AVATAR_CSS__
       }).slice(0, SUGGEST_LIMIT);
 
       if (!matches.length) {
-        suggest.innerHTML = '<div class="suggest-empty">Không có 式神 nào khớp “' + input.value.trim() + "”</div>";
+        suggest.innerHTML = '<div class="suggest-empty">Không có Thức thần nào khớp “' + input.value.trim() + "”</div>";
         suggest.hidden = false;
         input.setAttribute("aria-expanded", "true");
         cursor = -1;
@@ -2210,7 +2210,7 @@ __AVATAR_CSS__
 
   /* ---------- sparkline: win_rate 33 ngay ----------
      Mot series duy nhat, khong to area fill vi truc y bi zoom (khong bat dau tu 0).
-     Thang y dung chung cho ca 42 sparkline nen so sanh duoc giua cac 式神. */
+     Thang y dung chung cho ca 42 sparkline nen so sanh duoc giua cac Thức thần. */
 
   var TREND = DATA.trend || { dates: [], domain: [0.4, 0.6], series: {} };
   var SPARK_W = 108;
@@ -2299,7 +2299,7 @@ __AVATAR_CSS__
     sparkTip.classList.remove("show");
   }
 
-  /* ---------- xep hang 式神 ---------- */
+  /* ---------- xep hang Thức thần ---------- */
 
   var UNITS = DATA.units || [];
   var UNIT_NAMES = DATA.unit_names || {};
@@ -2413,7 +2413,7 @@ __AVATAR_CSS__
   var YUHUN_ALL = DATA.yuhun_all || {};
   var HAS_PAID = Object.keys(PAID).length > 0;
 
-  // Thang thanh chenh lech: lay tu du lieu, chung cho moi 式神 nen so sanh duoc.
+  // Thang thanh chenh lech: lay tu du lieu, chung cho moi Thức thần nen so sanh duoc.
   var DELTA_MAX = (function () {
     var top = 0.05;
     Object.keys(PAID).forEach(function (sid) {
@@ -2536,10 +2536,10 @@ __AVATAR_CSS__
         return ascending ? av - bv : bv - av;
       });
 
-    ucountEl.textContent = rows.length + " / " + UNITS.length + " 式神";
+    ucountEl.textContent = rows.length + " / " + UNITS.length + " Thức thần";
     unitsEl.innerHTML = rows.length
       ? rows.map(unitCard).join("")
-      : '<div class="empty">Không có 式神 nào khớp bộ lọc.</div>';
+      : '<div class="empty">Không có Thức thần nào khớp bộ lọc.</div>';
   }
 
   if (UNITS.length) {
@@ -2550,8 +2550,8 @@ __AVATAR_CSS__
     unitsEl.addEventListener("click", toggleDetail);
     if (HAS_PAID) {
       var banner = document.getElementById("paid-banner");
-      banner.innerHTML = "<strong>Bấm <em>Chi tiết</em></strong> ở mỗi 式神 để xem ngự hồn theo tỉ lệ thắng, " +
-        "式神 đi cùng / gặp phải, và hiệu quả theo lượt chọn. " +
+      banner.innerHTML = "<strong>Bấm <em>Chi tiết</em></strong> ở mỗi Thức thần để xem ngự hồn theo tỉ lệ thắng, " +
+        "Thức thần đi cùng / gặp phải, và hiệu quả theo lượt chọn. " +
         "Phần này lấy từ tài khoản hội viên <code>basic</code> của yysrank.win. " +
         "Ngự hồn lọc từ " + intFmt.format(PAID_META.min_yuhun_matches || 100) +
         " trận, ghép cặp từ " + intFmt.format(PAID_META.min_pair_matches || 300) +
@@ -2680,7 +2680,7 @@ __AVATAR_CSS__
       '<span class="sc" role="columnheader" title="điểm đấu kỹ trong tuần">Điểm</span>' +
       '<span class="wr" role="columnheader">Thắng</span>' +
       '<span class="mt" role="columnheader">Trận</span>' +
-      '<span class="faces" role="columnheader">式神 hay dùng <span class="cn">常用</span></span>' +
+      '<span class="faces" role="columnheader">Thức thần hay dùng <span class="cn">常用</span></span>' +
       "</div>";
 
     document.getElementById("players").setAttribute("role", "table");

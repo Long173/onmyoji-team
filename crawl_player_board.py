@@ -58,7 +58,7 @@ def main(argv: list[str] | None = None) -> int:
     args.output.write_text(json.dumps(document, ensure_ascii=False, indent=2), encoding="utf-8")
     print(
         f"Xong: {len(board.rows)} người chơi ({board.start_time} → {board.end_time}), "
-        f"{len(player_shishen_ids(board))} 式神 được nhắc -> {args.output}",
+        f"{len(player_shishen_ids(board))} Thức thần được nhắc -> {args.output}",
         file=sys.stderr,
     )
     return 0

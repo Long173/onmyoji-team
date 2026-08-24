@@ -46,7 +46,7 @@ class TeamRankQuery:
         if self.thres < 0:
             raise ValueError("thres không được âm")
         if len(self.ban) > 2:
-            raise ValueError("ban tối đa 2 式神 (giới hạn của site)")
+            raise ValueError("ban tối đa 2 Thức thần (giới hạn của site)")
 
     def params_for_page(self, page: int) -> Mapping[str, Any]:
         if page < 1:

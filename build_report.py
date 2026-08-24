@@ -43,7 +43,7 @@ DEFAULT_EXTRAS_INPUT = Path("out/extras-current.json")
 DATA_LINKS = (
     {"label": "đội hình JSON", "href": "team-rank-current.json"},
     {"label": "đội hình CSV", "href": "team-rank-current.csv"},
-    {"label": "式神 JSON", "href": "shishen-rank-current.json"},
+    {"label": "Thức thần JSON", "href": "shishen-rank-current.json"},
     {"label": "trend JSON", "href": "shishen-detail-current.json"},
     {"label": "nhãn + thống kê JSON", "href": "extras-current.json"},
 )
@@ -53,13 +53,13 @@ def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("--input", type=Path, default=DEFAULT_INPUT, help="file JSON do crawler sinh ra")
     parser.add_argument("--output", type=Path, default=DEFAULT_OUTPUT, help="file HTML xuất ra")
-    parser.add_argument("--avatar-dir", type=Path, default=DEFAULT_AVATAR_DIR, help="thư mục cache avatar 式神")
+    parser.add_argument("--avatar-dir", type=Path, default=DEFAULT_AVATAR_DIR, help="thư mục cache avatar Thức thần")
     parser.add_argument("--yuhun-dir", type=Path, default=DEFAULT_YUHUN_DIR, help="thư mục cache icon ngự hồn")
     parser.add_argument(
         "--unit-input",
         type=Path,
         default=DEFAULT_UNIT_INPUT,
-        help="file JSON của crawl_shishen_rank.py; thiếu thì báo cáo bỏ tab 式神",
+        help="file JSON của crawl_shishen_rank.py; thiếu thì báo cáo bỏ tab Thức thần",
     )
     parser.add_argument(
         "--detail-input",
@@ -135,10 +135,10 @@ def main(argv: list[str] | None = None) -> int:
         try:
             unit_rank = json.loads(args.unit_input.read_text(encoding="utf-8"))
         except (OSError, json.JSONDecodeError) as exc:
-            print(f"Bỏ qua tab 式神 — không đọc được {args.unit_input}: {exc}", file=sys.stderr)
+            print(f"Bỏ qua tab Thức thần — không đọc được {args.unit_input}: {exc}", file=sys.stderr)
             unit_rank = None
     else:
-        print(f"Không thấy {args.unit_input} — báo cáo sẽ không có tab 式神.", file=sys.stderr)
+        print(f"Không thấy {args.unit_input} — báo cáo sẽ không có tab Thức thần.", file=sys.stderr)
 
     unit_detail: dict | None = None
     if args.detail_input.is_file():
@@ -174,7 +174,7 @@ def main(argv: list[str] | None = None) -> int:
                 merged_teams = len(((candidate.get("team_paid") or {}).get("teams")) or {})
                 print(
                     f"Trộn dữ liệu hội viên từ {args.paid_input}: "
-                    f"{merged_units} 式神, {merged_teams} đội hình.",
+                    f"{merged_units} Thức thần, {merged_teams} đội hình.",
                     file=sys.stderr,
                 )
 
@@ -230,7 +230,7 @@ def main(argv: list[str] | None = None) -> int:
         shishen_map = fetch_shishen_map()
         if not args.skip_download:
             fetched, missing = download_avatars(shishen_ids, args.avatar_dir)
-            print(f"Avatar 式神: {fetched} tải mới, {len(shishen_ids) - len(missing)} sẵn sàng.", file=sys.stderr)
+            print(f"Avatar Thức thần: {fetched} tải mới, {len(shishen_ids) - len(missing)} sẵn sàng.", file=sys.stderr)
             if missing:
                 print(f"  thiếu: {sorted(missing)}", file=sys.stderr)
             if yuhun_ids:
@@ -284,10 +284,10 @@ def main(argv: list[str] | None = None) -> int:
     if args.include_paid or paid_payload:
         paid_units = len(((payload.get("paid") or {}).get("units")) or {})
         paid_teams = len(((payload.get("team_paid") or {}).get("teams")) or {})
-        paid_note = f", {paid_units} 式神 + {paid_teams} đội hình có dữ liệu hội viên"
+        paid_note = f", {paid_units} Thức thần + {paid_teams} đội hình có dữ liệu hội viên"
     print(
         f"Xong: {args.output} ({size_mb:.2f} MB, {len(teams)} đội hình, "
-        f"{len(stats)} 式神 trong meta, {len(unit_rows)} 式神 xếp hạng, "
+        f"{len(stats)} Thức thần trong meta, {len(unit_rows)} Thức thần xếp hạng, "
         f"{len(yuhun_ids)} ngự hồn{paid_note})",
         file=sys.stderr,
     )

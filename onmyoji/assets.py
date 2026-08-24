@@ -1,4 +1,4 @@
-"""Bảng tra tĩnh: shishen (式神) và server, dùng để dịch id sang tên."""
+"""Bảng tra tĩnh: shishen (Thức thần) và server, dùng để dịch id sang tên."""
 
 from __future__ import annotations
 

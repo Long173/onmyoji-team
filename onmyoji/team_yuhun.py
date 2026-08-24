@@ -1,11 +1,11 @@
 """Ngự hồn theo đội hình — endpoint GET /api/team/yuhun (cần hội viên `basic`).
 
-Endpoint trả về tối đa 50 **tổ hợp ngự hồn hoàn chỉnh** cho cả đội (mỗi 式神 một
+Endpoint trả về tối đa 50 **tổ hợp ngự hồn hoàn chỉnh** cho cả đội (mỗi Thức thần một
 bộ), kèm `win_rate` và `total`. Vì là tổ hợp 5 chiều nên cực kỳ phân mảnh:
 median 3 trận/tổ hợp, và 50 tổ hợp đó chỉ phủ khoảng 4-5% số trận của đội.
 
 Do đó KHÔNG dùng từng tổ hợp làm số liệu. Cách dùng được là **gộp theo cặp
-(式神, ngự hồn)**: cộng dồn `total` và tính tỉ lệ thắng gia quyền. Khi gộp, các
+(Thức thần, ngự hồn)**: cộng dồn `total` và tính tỉ lệ thắng gia quyền. Khi gộp, các
 lựa chọn phổ biến đạt 100-230 trận — đủ để nói "trong đội này con X hay mang bộ Y".
 
 Hai giới hạn phải nêu kèm khi trình bày:
@@ -61,7 +61,7 @@ class TeamYuhunQuery:
 
 @dataclass(frozen=True)
 class YuhunOption:
-    """Một lựa chọn ngự hồn của một 式神 trong đội, sau khi gộp."""
+    """Một lựa chọn ngự hồn của một Thức thần trong đội, sau khi gộp."""
 
     shishen_id: int
     yuhun_id: int

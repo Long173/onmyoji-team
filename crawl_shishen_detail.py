@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
-"""CLI crawl `trend` và `summary.teams` cho từng 式神 (`/api/shishen/detail`).
+"""CLI crawl `trend` và `summary.teams` cho từng Thức thần (`/api/shishen/detail`).
 
 Không có token: chỉ lấy `trend` và `summary.teams` (phần mở).
 Có token hội viên `basic`: thêm `yuhuns`, `positions`, `counters`, `synergies`.
 
-Lấy danh sách 式神 từ file của crawl_shishen_rank.py.
+Lấy danh sách Thức thần từ file của crawl_shishen_rank.py.
 
 Ví dụ:
     python3 crawl_shishen_detail.py
@@ -32,7 +32,7 @@ def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("--input", type=Path, default=DEFAULT_INPUT, help="file JSON của crawl_shishen_rank.py")
     parser.add_argument("--output", type=Path, default=DEFAULT_OUTPUT, help="file JSON xuất ra")
-    parser.add_argument("--limit", type=int, default=None, help="chỉ lấy N 式神 đầu (mặc định: hết)")
+    parser.add_argument("--limit", type=int, default=None, help="chỉ lấy N Thức thần đầu (mặc định: hết)")
     parser.add_argument("--delay", type=float, default=DEFAULT_DELAY, help=f"giây nghỉ giữa request (mặc định {DEFAULT_DELAY})")
     parser.add_argument("--no-token", action="store_true", help="bỏ qua token, chỉ lấy phần dữ liệu mở")
     return parser
@@ -69,7 +69,7 @@ def main(argv: list[str] | None = None) -> int:
     if args.limit is not None:
         ids = ids[: args.limit]
     if not ids:
-        print("Không có 式神 nào trong file đầu vào.", file=sys.stderr)
+        print("Không có Thức thần nào trong file đầu vào.", file=sys.stderr)
         return 1
 
     token: str | None = None
@@ -80,7 +80,7 @@ def main(argv: list[str] | None = None) -> int:
             print(f"Bỏ qua token: {exc}", file=sys.stderr)
 
     tier = "có token (thử lấy cả dữ liệu hội viên)" if token else "không token (chỉ dữ liệu mở)"
-    print(f"Lấy chi tiết {len(ids)} 式神, nghỉ {args.delay}s mỗi request — {tier}.", file=sys.stderr)
+    print(f"Lấy chi tiết {len(ids)} Thức thần, nghỉ {args.delay}s mỗi request — {tier}.", file=sys.stderr)
 
     results: list[dict] = []
     failures: list[dict] = []
@@ -138,8 +138,8 @@ def main(argv: list[str] | None = None) -> int:
     size_kb = args.output.stat().st_size / 1024
     paid = sum(1 for r in results if r.get("yuhuns"))
     print(
-        f"Xong: {len(results)}/{len(ids)} 式神 -> {args.output} ({size_kb:.0f} KB); "
-        f"{paid} 式神 có dữ liệu hội viên",
+        f"Xong: {len(results)}/{len(ids)} Thức thần -> {args.output} ({size_kb:.0f} KB); "
+        f"{paid} Thức thần có dữ liệu hội viên",
         file=sys.stderr,
     )
     return 0

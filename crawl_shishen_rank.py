@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""CLI crawl bảng xếp hạng 式神 của https://yysrank.win/#/query/shishen.
+"""CLI crawl bảng xếp hạng Thức thần của https://yysrank.win/#/query/shishen.
 
 Gộp 3 endpoint mở: /api/shishen/rank (meta), /api/asset/shishen_stats (chỉ số gốc),
 /api/asset/yuhun (tên + icon ngự hồn).
@@ -55,7 +55,7 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--min-level", type=int, default=10, help="mốc điểm/đoạn dưới")
     parser.add_argument("--max-level", type=int, default=9999, help="mốc điểm/đoạn trên")
     parser.add_argument("--tag", default="", help="lọc theo tag của site")
-    parser.add_argument("--ban", type=_parse_ids, default=(), help="id 式神 ở ô ban (tối đa 2)")
+    parser.add_argument("--ban", type=_parse_ids, default=(), help="id Thức thần ở ô ban (tối đa 2)")
     parser.add_argument("--out-dir", type=Path, default=DEFAULT_OUTPUT_DIR, help="thư mục xuất")
     parser.add_argument("--slug", default="shishen-rank", help="tiền tố tên file xuất")
     return parser
@@ -79,11 +79,11 @@ def main(argv: list[str] | None = None) -> int:
 
     try:
         rank = fetch_rank(query)
-        print(f"Bảng 式神: {len(rank.rows)} dòng, phân tích {rank.matches_analysed:,} trận.", file=sys.stderr)
+        print(f"Bảng Thức thần: {len(rank.rows)} dòng, phân tích {rank.matches_analysed:,} trận.", file=sys.stderr)
         shishen_map = fetch_shishen_map()
         stats = fetch_shishen_stats()
         yuhun_map = fetch_yuhun_map()
-        print(f"Asset: {len(shishen_map)} 式神, {len(stats)} bộ chỉ số, {len(yuhun_map)} ngự hồn.", file=sys.stderr)
+        print(f"Asset: {len(shishen_map)} Thức thần, {len(stats)} bộ chỉ số, {len(yuhun_map)} ngự hồn.", file=sys.stderr)
     except ApiError as exc:
         print(f"Lỗi API: {exc}", file=sys.stderr)
         return 1
@@ -137,7 +137,7 @@ def main(argv: list[str] | None = None) -> int:
     path = args.out_dir / f"{args.slug}.json"
     path.write_text(json.dumps(document, ensure_ascii=False, indent=2), encoding="utf-8")
     print(
-        f"Xong: {len(document['shishen'])} 式神, {len(document['yuhun'])} ngự hồn -> {path}",
+        f"Xong: {len(document['shishen'])} Thức thần, {len(document['yuhun'])} ngự hồn -> {path}",
         file=sys.stderr,
     )
     return 0

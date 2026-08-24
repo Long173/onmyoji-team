@@ -74,7 +74,7 @@ def main(argv: list[str] | None = None) -> int:
     args.output.write_text(json.dumps(document, ensure_ascii=False, indent=2), encoding="utf-8")
     size_kb = args.output.stat().st_size / 1024
     print(
-        f"Xong: {len(tags)} 式神 có nhãn, {len(heat)} độ nóng, "
+        f"Xong: {len(tags)} Thức thần có nhãn, {len(heat)} độ nóng, "
         f"tổng {stats.total_matches:,} trận -> {args.output} ({size_kb:.0f} KB)",
         file=sys.stderr,
     )

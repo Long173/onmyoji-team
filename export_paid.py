@@ -54,8 +54,8 @@ def build_parser() -> argparse.ArgumentParser:
 def main(argv: list[str] | None = None) -> int:
     args = build_parser().parse_args(argv)
 
-    rank = _load(args.rank, "bảng xếp hạng 式神")
-    unit_detail = _load(args.unit_detail, "chi tiết 式神")
+    rank = _load(args.rank, "bảng xếp hạng Thức thần")
+    unit_detail = _load(args.unit_detail, "chi tiết Thức thần")
     team_detail = _load(args.team_detail, "chi tiết đội hình")
     team_yuhun = _load(args.team_yuhun, "ngự hồn theo đội hình")
     player_board = _load(args.player_board, "BXH người chơi")
@@ -85,7 +85,7 @@ def main(argv: list[str] | None = None) -> int:
     players = len(((paid.get("players") or {}).get("rows")) or [])
     size_kb = args.output.stat().st_size / 1024
     print(
-        f"Xong: {units} 式神 + {teams} đội hình (+{yuhun_teams} có ngự hồn) "
+        f"Xong: {units} Thức thần + {teams} đội hình (+{yuhun_teams} có ngự hồn) "
         f"+ {players} người chơi "
         
         f"-> {args.output} ({size_kb:.0f} KB). "

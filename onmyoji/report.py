@@ -27,7 +27,7 @@ class ReportError(RuntimeError):
 
 @dataclass(frozen=True)
 class ShishenStat:
-    """Thống kê gộp của một 式神 trong tập đội hình."""
+    """Thống kê gộp của một Thức thần trong tập đội hình."""
 
     shishen_id: int
     teams: int
@@ -44,7 +44,7 @@ class ShishenStat:
 
 
 def aggregate_shishen(teams: Sequence[Mapping[str, Any]]) -> tuple[ShishenStat, ...]:
-    """Gộp số liệu theo 式神: số đội hình, tổng trận, tỉ lệ thắng gia quyền."""
+    """Gộp số liệu theo Thức thần: số đội hình, tổng trận, tỉ lệ thắng gia quyền."""
     buckets: dict[int, dict[str, float]] = defaultdict(
         lambda: {"teams": 0.0, "matches": 0.0, "weighted": 0.0}
     )
@@ -79,7 +79,7 @@ def _image_rule(selector: str, path: Path) -> str:
 
 
 def build_avatar_css(shishen_ids: Sequence[int], avatar_dir: Path) -> str:
-    """Nhúng mỗi avatar 式神 đúng một lần thành class CSS `.a<id>`."""
+    """Nhúng mỗi avatar Thức thần đúng một lần thành class CSS `.a<id>`."""
     rules = [
         _image_rule(f".a{shishen_id}", avatar_dir / f"{shishen_id}.webp")
         for shishen_id in shishen_ids
@@ -179,7 +179,7 @@ def build_payload(
 
 
 def _unit_section(unit_rank: Mapping[str, Any] | None) -> Mapping[str, Any]:
-    """Phần dữ liệu cho tab 式神. Rỗng nếu chưa crawl bảng xếp hạng 式神."""
+    """Phần dữ liệu cho tab Thức thần. Rỗng nếu chưa crawl bảng xếp hạng Thức thần."""
     if not unit_rank:
         return {"units": [], "unit_names": {}, "stats": {}, "yuhun": {}}
 
@@ -232,7 +232,7 @@ def derive_pick_base(teams: Sequence[Mapping[str, Any]]) -> float:
 
 
 def _trend_payload(details: Sequence[Mapping[str, Any]]) -> Mapping[str, Any]:
-    """Chuỗi win_rate 33 ngày cho từng 式神, dùng chung một thang y để so sánh được."""
+    """Chuỗi win_rate 33 ngày cho từng Thức thần, dùng chung một thang y để so sánh được."""
     dates: tuple[str, ...] = ()
     series: dict[str, list[float]] = {}
 
@@ -319,7 +319,7 @@ def _paid_rows(
     entry: Mapping[str, Any],
     baseline: float,
 ) -> Mapping[str, Any]:
-    """Lọc nhiễu và tính chênh lệch so với tỉ lệ thắng chung của 式神 đó."""
+    """Lọc nhiễu và tính chênh lệch so với tỉ lệ thắng chung của Thức thần đó."""
 
     def keep(rows, key, floor):
         picked = [r for r in rows if int(r.get("total") or 0) >= floor]
@@ -508,7 +508,7 @@ def _team_paid_section(
 
 
 def team_paid_shishen_ids(payload: Mapping[str, Any]) -> tuple[int, ...]:
-    """式神 cần avatar cho phần counter theo đội hình."""
+    """Thức thần cần avatar cho phần counter theo đội hình."""
     teams = ((payload.get("team_paid") or {}).get("teams")) or {}
     found: set[int] = set()
     for row in teams.values():
@@ -551,7 +551,7 @@ def paid_payload_is_empty(paid_payload: Mapping[str, Any] | None) -> bool:
 
 
 def paid_payload_shishen_ids(paid_payload: Mapping[str, Any]) -> tuple[int, ...]:
-    """式神 cần avatar cho phần dữ liệu hội viên (ghép cặp + counter + thứ tự pick)."""
+    """Thức thần cần avatar cho phần dữ liệu hội viên (ghép cặp + counter + thứ tự pick)."""
     found: set[int] = set()
     for unit in (((paid_payload.get("paid") or {}).get("units")) or {}).values():
         for key in ("synergies", "counters"):
@@ -652,7 +652,7 @@ def _player_section(player_board: Mapping[str, Any] | None) -> Mapping[str, Any]
 
 
 def player_shishen_ids_from_payload(paid_payload: Mapping[str, Any]) -> tuple[int, ...]:
-    """式神 cần avatar cho BXH người chơi."""
+    """Thức thần cần avatar cho BXH người chơi."""
     rows = ((paid_payload.get("players") or {}).get("rows")) or []
     found: set[int] = set()
     for row in rows:

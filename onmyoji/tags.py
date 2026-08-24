@@ -1,9 +1,9 @@
-"""Nhãn vai trò của 式神 — /api/shishen/tag/all và /api/asset/tag (đều mở).
+"""Nhãn vai trò của Thức thần — /api/shishen/tag/all và /api/asset/tag (đều mở).
 
 Site chia hai loại nhãn:
 
 * `system: true`  — bộ từ vựng chức năng do site chuẩn hoá (输出, 拉条, 护盾…).
-  Đây là phần dùng được: nó nói 式神 làm gì trong đội.
+  Đây là phần dùng được: nó nói Thức thần làm gì trong đội.
 * `system: false` — nhãn người dùng tự thêm. Phần lớn là meme, và có cả từ tục
   (畜生, 死妈, 涩图, 恶心). Bỏ, trừ vài nhãn chỉ cơ chế thật trong ALLOWED_USER_TAGS.
 
@@ -60,7 +60,7 @@ TAG_LABELS: Mapping[str, str] = {
     "封普攻": "Phong đánh thường",
     "无视御魂": "Bỏ qua ngự hồn",
     "无视被动": "Bỏ qua bị động",
-    "配合普攻式神": "Hợp 式神 đánh thường",
+    "配合普攻式神": "Hợp Thức thần đánh thường",
     "单体": "Đơn mục tiêu",
     # Nhãn người dùng nhưng chỉ cơ chế rõ ràng, giữ lại.
     "治疗或恢复": "Trị liệu / hồi phục",

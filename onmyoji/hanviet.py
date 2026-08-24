@@ -1,8 +1,8 @@
-"""Bảng âm Hán-Việt cho từng ký tự xuất hiện trong tên 式神.
+"""Bảng âm Hán-Việt cho từng ký tự xuất hiện trong tên Thức thần.
 
 Dịch theo âm Hán-Việt vì đây là cách cộng đồng Âm Dương Sư tiếng Việt gọi tên
-式神 (vd. 荒骷髅 -> "Hoang Khô Lâu"). Cách này deterministic và tự động phủ
-được 式神 mới, miễn ký tự đã có trong bảng.
+Thức thần (vd. 荒骷髅 -> "Hoang Khô Lâu"). Cách này deterministic và tự động phủ
+được Thức thần mới, miễn ký tự đã có trong bảng.
 """
 
 from __future__ import annotations

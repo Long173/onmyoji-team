@@ -1,4 +1,4 @@
-"""Tải và cache ảnh avatar 式神 (`/imgs/shishen/<id>.webp`)."""
+"""Tải và cache ảnh avatar Thức thần (`/imgs/shishen/<id>.webp`)."""
 
 from __future__ import annotations
 

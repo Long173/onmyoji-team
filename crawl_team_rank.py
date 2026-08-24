@@ -47,14 +47,14 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--min-level", type=int, default=10, help="mốc điểm/đoạn dưới (10 = 名仕)")
     parser.add_argument("--max-level", type=int, default=9999, help="mốc điểm/đoạn trên")
     parser.add_argument("--thres", type=int, default=100, help="số trận tối thiểu của một阵容")
-    parser.add_argument("--first-n", type=int, default=5, help="độ dài阵容 (số 式神)")
+    parser.add_argument("--first-n", type=int, default=5, help="độ dài阵容 (số Thức thần)")
     parser.add_argument("--order", choices=ORDER_FIELDS, default="win_rate", help="cột sắp xếp")
     parser.add_argument("--asc", action="store_true", help="sắp xếp tăng dần")
     parser.add_argument("--page-size", type=int, default=50, help="số dòng mỗi request (tối đa 100)")
     parser.add_argument("--max-pages", type=int, default=None, help="giới hạn số trang crawl")
-    parser.add_argument("--include", type=_parse_ids, default=(), help="id 式神 buộc phải có, cách nhau bởi dấu phẩy")
-    parser.add_argument("--exclude", type=_parse_ids, default=(), help="id 式神 loại trừ")
-    parser.add_argument("--ban", type=_parse_ids, default=(), help="id 式神 ở ô ban (tối đa 2)")
+    parser.add_argument("--include", type=_parse_ids, default=(), help="id Thức thần buộc phải có, cách nhau bởi dấu phẩy")
+    parser.add_argument("--exclude", type=_parse_ids, default=(), help="id Thức thần loại trừ")
+    parser.add_argument("--ban", type=_parse_ids, default=(), help="id Thức thần ở ô ban (tối đa 2)")
     parser.add_argument("--out-dir", type=Path, default=DEFAULT_OUTPUT_DIR, help="thư mục xuất kết quả")
     parser.add_argument("--slug", default="team-rank", help="tiền tố tên file xuất")
     return parser
@@ -84,7 +84,7 @@ def main(argv: list[str] | None = None) -> int:
 
     try:
         shishen_names = fetch_shishen_map()
-        print(f"Đã tải {len(shishen_names)} 式神.", file=sys.stderr)
+        print(f"Đã tải {len(shishen_names)} Thức thần.", file=sys.stderr)
 
         rows: list[dict] = []
         last_update = ""

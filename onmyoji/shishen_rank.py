@@ -1,6 +1,6 @@
-"""Bảng xếp hạng 式神 — endpoint GET /api/shishen/rank.
+"""Bảng xếp hạng Thức thần — endpoint GET /api/shishen/rank.
 
-Endpoint này **không phân trang**: nó trả về toàn bộ 式神 đạt ngưỡng dữ liệu
+Endpoint này **không phân trang**: nó trả về toàn bộ Thức thần đạt ngưỡng dữ liệu
 trong một lần gọi. Field `total` là *số trận* được phân tích, không phải số dòng.
 Nhãn cột lấy đúng theo UI của site (xem NHÃN bên dưới).
 """
@@ -70,7 +70,7 @@ class ShishenRankQuery:
         if self.min_level > self.max_level:
             raise ValueError("min_level không được lớn hơn max_level")
         if len(self.ban) > 2:
-            raise ValueError("ban tối đa 2 式神 (giới hạn của site)")
+            raise ValueError("ban tối đa 2 Thức thần (giới hạn của site)")
 
     def as_params(self) -> Mapping[str, Any]:
         return {

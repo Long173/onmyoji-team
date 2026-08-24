@@ -1,4 +1,4 @@
-"""Dịch tên 式神 từ tiếng Trung sang tiếng Việt (âm Hán-Việt) + tên thông dụng."""
+"""Dịch tên Thức thần từ tiếng Trung sang tiếng Việt (âm Hán-Việt) + tên thông dụng."""
 
 from __future__ import annotations
 
@@ -103,7 +103,7 @@ TITLE_EXCEPTIONS = frozenset()
 
 @dataclass(frozen=True)
 class ShishenName:
-    """Tên một 式神 ở cả ba dạng."""
+    """Tên một Thức thần ở cả ba dạng."""
 
     shishen_id: int
     chinese: str

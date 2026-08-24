@@ -5,7 +5,7 @@ Cần đăng nhập (không cần hội viên): route `/query/team/detail` khai
 
 Phản hồi gồm:
   summary        — win_rate / pick_rate / total / duration của đội hình
-  order          — thứ tự chọn (bp order) của từng 式神
+  order          — thứ tự chọn (bp order) của từng Thức thần
   yys            — số liệu theo âm dương sư (nhân vật dẫn dắt)
   counter        — đội hình khắc chế / bị khắc chế
   ban_stats      — thống kê ban trong các trận có đội hình này
@@ -56,7 +56,7 @@ class TeamDetailQuery:
         if self.min_level > self.max_level:
             raise ValueError("min_level không được lớn hơn max_level")
         if len(self.ban) > 2:
-            raise ValueError("ban tối đa 2 式神")
+            raise ValueError("ban tối đa 2 Thức thần")
 
     def params_for(self, shishen_ids: Sequence[int]) -> Mapping[str, Any]:
         if not shishen_ids:

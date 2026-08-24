@@ -1,17 +1,17 @@
-"""Chi tiết một 式神 — endpoint GET /api/shishen/detail.
+"""Chi tiết một Thức thần — endpoint GET /api/shishen/detail.
 
 Endpoint mở (không cần đăng nhập), nhưng chỉ **một phần** dữ liệu được trả:
 
   KHÔNG CẦN LOGIN
          summary.win_rate / pick_rate / ban_rate / external_rate / duration
-         summary.teams   — tối đa 100 đội hình chứa 式神 này, KHÔNG áp ngưỡng số trận
+         summary.teams   — tối đa 100 đội hình chứa Thức thần này, KHÔNG áp ngưỡng số trận
          trend           — mỗi ngày một điểm win_rate / pick_rate / ban_rate
 
   CẦN HỘI VIÊN `basic`  (tài khoản free trả về array rỗng, đã kiểm chứng)
          summary.yuhuns    — mỗi bộ ngự hồn: yuhun_id, total, win_rate
          summary.positions — mỗi vị trí BP: position, total, win_rate
-         summary.counters  — 式神 đối đầu: shishen_id, total, win_rate
-         summary.synergies — 式神 đi cùng: shishen_id, total, win_rate
+         summary.counters  — Thức thần đối đầu: shishen_id, total, win_rate
+         summary.synergies — Thức thần đi cùng: shishen_id, total, win_rate
 
   CẦN `pro`
          ban_stats / ban_conditions — vẫn rỗng ở hội viên basic.
@@ -46,7 +46,7 @@ class ShishenDetailQuery:
         if self.min_level > self.max_level:
             raise ValueError("min_level không được lớn hơn max_level")
         if len(self.ban) > 2:
-            raise ValueError("ban tối đa 2 式神")
+            raise ValueError("ban tối đa 2 Thức thần")
 
     def params_for(self, shishen_id: int) -> Mapping[str, Any]:
         return {
@@ -61,7 +61,7 @@ class ShishenDetailQuery:
 
 @dataclass(frozen=True)
 class ShishenDetail:
-    """Phần dữ liệu dùng được của một 式神.
+    """Phần dữ liệu dùng được của một Thức thần.
 
     Bốn mục cuối chỉ có dữ liệu khi token thuộc hội viên `basic` trở lên.
     """
@@ -102,7 +102,7 @@ def fetch_detail(
     shishen_id: int,
     token: str | None = None,
 ) -> ShishenDetail:
-    """Lấy chi tiết một 式神. Truyền `token` của hội viên basic để có thêm 4 mục trả phí."""
+    """Lấy chi tiết một Thức thần. Truyền `token` của hội viên basic để có thêm 4 mục trả phí."""
     payload = get_json(SHISHEN_DETAIL_PATH, query.params_for(shishen_id), token=token)
     if not isinstance(payload, dict):
         raise ApiError(f"{SHISHEN_DETAIL_PATH}: 'data' phải là object")

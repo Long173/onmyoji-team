@@ -23,7 +23,7 @@ def normalize_row(
     rank: int,
     shishen_names: Mapping[int, str],
 ) -> Mapping[str, Any]:
-    """Trả về bản ghi mới đã bổ sung tên 式神 — không sửa `row` gốc."""
+    """Trả về bản ghi mới đã bổ sung tên Thức thần — không sửa `row` gốc."""
     team_ids = tuple(int(sid) for sid in (row.get("team") or []))
     team_names = tuple(shishen_names.get(sid, f"#{sid}") for sid in team_ids)
 
