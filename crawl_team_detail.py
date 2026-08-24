@@ -19,7 +19,7 @@ import sys
 import time
 from pathlib import Path
 
-from onmyoji.auth import AuthError, load_token
+from onmyoji.auth import AuthError, resolve_token
 from onmyoji.http import ApiError, AuthRequiredError
 from onmyoji.team_detail import (
     SECTION_LABELS,
@@ -51,6 +51,16 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--top", type=int, default=DEFAULT_TOP, help=f"số đội hình lấy chi tiết (mặc định {DEFAULT_TOP})")
     parser.add_argument("--team", type=_parse_ids, default=None, help="chỉ lấy một đội hình cụ thể, vd 330,390,575,578,585")
     parser.add_argument("--delay", type=float, default=DEFAULT_DELAY, help=f"giây nghỉ giữa các request (mặc định {DEFAULT_DELAY})")
+    parser.add_argument(
+        "--by",
+        choices=("total", "win_rate"),
+        default="total",
+        help=(
+            "chọn đội hình theo tiêu chí nào. `total` (mặc định) lấy đội nhiều trận nhất — "
+            "thứ tự BP / âm dương sư / counter mới đủ mẫu; `win_rate` lấy đội thắng cao nhất "
+            "nhưng dữ liệu con thường rất mỏng."
+        ),
+    )
     return parser
 
 
@@ -65,7 +75,7 @@ def main(argv: list[str] | None = None) -> int:
         return 2
 
     try:
-        token = load_token()
+        token = resolve_token()
     except AuthError as exc:
         print(f"Chưa có token:\n{exc}", file=sys.stderr)
         return 2
@@ -89,11 +99,15 @@ def main(argv: list[str] | None = None) -> int:
     )
 
     if args.team:
-        targets = [{"team_ids": list(args.team), "rank": None}]
+        targets = [{"team_ids": list(args.team), "rank": None, "total": None}]
     else:
+        pool = sorted(
+            crawl.get("teams") or (),
+            key=lambda t: -float(t.get(args.by) or 0),
+        )
         targets = [
-            {"team_ids": list(t["team_ids"]), "rank": t.get("rank")}
-            for t in (crawl.get("teams") or [])[: args.top]
+            {"team_ids": list(t["team_ids"]), "rank": t.get("rank"), "total": t.get("total")}
+            for t in pool[: args.top]
         ]
 
     if not targets:
@@ -118,7 +132,9 @@ def main(argv: list[str] | None = None) -> int:
             continue
 
         sizes = section_sizes(detail)
-        details.append({"team_ids": ids, "rank": target["rank"], "detail": detail})
+        details.append(
+            {"team_ids": ids, "rank": target["rank"], "total": target.get("total"), "detail": detail}
+        )
         filled = ", ".join(f"{k}={v}" for k, v in sizes.items() if v)
         print(f"  [{index}/{len(targets)}] {ids} → {filled or 'rỗng'}", file=sys.stderr)
 
@@ -136,6 +152,7 @@ def main(argv: list[str] | None = None) -> int:
             "access_tier": "free (cần đăng nhập)",
             "params": dict(query.params_for(details[0]["team_ids"])),
             "section_labels": dict(SECTION_LABELS),
+            "selected_by": args.by,
             "requested": len(targets),
             "fetched": len(details),
             "failed": len(failures),

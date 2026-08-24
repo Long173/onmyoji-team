@@ -12,6 +12,7 @@ from pathlib import Path
 from typing import Any, Mapping, Sequence
 
 from .translate import ShishenName
+from .yys import yys_table
 
 TEMPLATE_PATH = Path(__file__).resolve().parent.parent / "templates" / "report.html"
 DATA_PLACEHOLDER = "__DATA__"
@@ -112,7 +113,9 @@ def build_payload(
     data_links: Sequence[Mapping[str, str]] = (),
     unit_rank: Mapping[str, Any] | None = None,
     unit_detail: Mapping[str, Any] | None = None,
+    team_detail: Mapping[str, Any] | None = None,
     include_paid: bool = False,
+    sibling_link: Mapping[str, str] | None = None,
 ) -> Mapping[str, Any]:
     """Gói dữ liệu mà template cần — thuần dữ liệu, không HTML."""
     teams = list(crawl.get("teams") or ())
@@ -138,6 +141,7 @@ def build_payload(
             "min_win_rate": min(win_rates),
             "median_duration": statistics.median(float(t["duration"]) for t in teams),
             "data_links": [dict(link) for link in data_links],
+            "sibling": dict(sibling_link) if sibling_link else None,
         },
         "names": {
             str(stat.shishen_id): {
@@ -161,6 +165,7 @@ def build_payload(
         **_unit_section(unit_rank),
         **_detail_section(unit_detail, teams),
         **_paid_section(unit_detail, unit_rank, include_paid),
+        **_team_paid_section(team_detail, include_paid),
     }
 
 
@@ -394,4 +399,104 @@ def paid_yuhun_ids(payload: Mapping[str, Any]) -> tuple[int, ...]:
     """Các yuhun_id cần icon cho phần dữ liệu hội viên."""
     units = ((payload.get("paid") or {}).get("units")) or {}
     found = {int(row["yuhun_id"]) for unit in units.values() for row in unit.get("yuhuns") or ()}
+    return tuple(sorted(found))
+
+
+# Ngưỡng cho dữ liệu theo đội hình. counter bị phân mảnh nhiều nhất nên khắt khe hơn.
+MIN_ORDER_MATCHES = 100
+MIN_YYS_MATCHES = 50
+MIN_COUNTER_MATCHES = 100
+TOP_ORDERS = 5
+TOP_COUNTERS = 5
+
+
+def team_key(shishen_ids: Sequence[int]) -> str:
+    """Khoá ổn định cho một đội hình, không phụ thuộc thứ tự đầu vào."""
+    return "-".join(str(int(i)) for i in sorted(shishen_ids))
+
+
+def _team_paid_rows(detail: Mapping[str, Any]) -> Mapping[str, Any]:
+    """Lọc theo số trận rồi sắp xếp. Trả về mục rỗng nếu không dòng nào đủ mẫu."""
+    orders = sorted(
+        (
+            {
+                "sequence": [int(i) for i in (r.get("team") or ())],
+                "total": int(r["total"]),
+                "win_rate": float(r["win_rate"]),
+                "pick_rate": float(r.get("pick_rate") or 0.0),
+            }
+            for r in (detail.get("order") or ())
+            if int(r.get("total") or 0) >= MIN_ORDER_MATCHES
+        ),
+        key=lambda r: -r["win_rate"],
+    )[:TOP_ORDERS]
+
+    yys = sorted(
+        (
+            {
+                "yys_id": int(r["yys_id"]),
+                "total": int(r["total"]),
+                "win_rate": float(r["win_rate"]),
+                "pick_rate": float(r.get("pick_rate") or 0.0),
+            }
+            for r in (detail.get("yys") or ())
+            if int(r.get("total") or 0) >= MIN_YYS_MATCHES
+        ),
+        key=lambda r: -r["total"],
+    )
+
+    # Sắp TĂNG dần: đội hình mình thắng thấp nhất mới là cái đáng đề phòng.
+    counters = sorted(
+        (
+            {
+                "team_ids": [int(i) for i in (r.get("team") or ())],
+                "total": int(r["total"]),
+                "win_rate": float(r["win_rate"]),
+            }
+            for r in (detail.get("counter") or ())
+            if int(r.get("total") or 0) >= MIN_COUNTER_MATCHES
+        ),
+        key=lambda r: r["win_rate"],
+    )[:TOP_COUNTERS]
+
+    return {"orders": orders, "yys": yys, "counters": counters}
+
+
+def _team_paid_section(
+    team_detail: Mapping[str, Any] | None,
+    include_paid: bool,
+) -> Mapping[str, Any]:
+    """Thứ tự BP / âm dương sư / đội hình đối đầu — chỉ hội viên `basic` mới có."""
+    entries = (team_detail or {}).get("details") or []
+    if not include_paid or not entries:
+        return {"team_paid": {}, "yys": {}}
+
+    rows = {}
+    for entry in entries:
+        detail = entry.get("detail") or {}
+        picked = _team_paid_rows(detail)
+        if picked["orders"] or picked["yys"] or picked["counters"]:
+            rows[team_key(entry.get("team_ids") or ())] = picked
+
+    if not rows:
+        return {"team_paid": {}, "yys": {}}
+
+    return {
+        "team_paid": {
+            "teams": rows,
+            "min_order_matches": MIN_ORDER_MATCHES,
+            "min_yys_matches": MIN_YYS_MATCHES,
+            "min_counter_matches": MIN_COUNTER_MATCHES,
+        },
+        "yys": {str(k): dict(v) for k, v in yys_table().items()},
+    }
+
+
+def team_paid_shishen_ids(payload: Mapping[str, Any]) -> tuple[int, ...]:
+    """式神 cần avatar cho phần counter theo đội hình."""
+    teams = ((payload.get("team_paid") or {}).get("teams")) or {}
+    found: set[int] = set()
+    for row in teams.values():
+        for counter in row.get("counters") or ():
+            found.update(int(i) for i in counter.get("team_ids") or ())
     return tuple(sorted(found))

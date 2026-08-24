@@ -667,6 +667,79 @@ td.pic { width: 46px; }
   .yh-row { grid-template-columns: 26px minmax(0, 1fr) 48px 74px 54px; }
 }
 
+/* ---------- panel chi tiet doi hinh ---------- */
+
+.team-row.expandable { position: relative; }
+
+.team-detail {
+  grid-column: 1 / -1;
+  display: grid;
+  grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr);
+  gap: 24px;
+  padding: 16px 4px 4px;
+  border-top: 1px dashed var(--hairline);
+  margin-top: 10px;
+}
+
+.team-detail[hidden] { display: none; }
+
+.seq-row {
+  display: grid;
+  grid-template-columns: 52px minmax(0, 1fr) 52px 58px;
+  gap: 10px;
+  align-items: center;
+  padding: 4px 0;
+  font-family: var(--f-data);
+  font-size: 11.5px;
+  font-variant-numeric: tabular-nums;
+  color: var(--muted);
+}
+
+.seq-row .chain { display: flex; align-items: center; gap: 3px; flex-wrap: wrap; }
+.seq-row .chain .av { width: 26px; height: 26px; }
+.seq-row .chain span.arrow { color: var(--hairline); font-size: 10px; }
+.seq-row .wr { text-align: right; color: var(--ink-soft); }
+.seq-row .mt { text-align: right; }
+.seq-row .slot { color: var(--gold); font-size: 10px; letter-spacing: 0.08em; text-transform: uppercase; }
+
+.yys-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 46px 46px 58px;
+  gap: 9px;
+  align-items: baseline;
+  padding: 3px 0;
+  font-family: var(--f-data);
+  font-size: 11.5px;
+  font-variant-numeric: tabular-nums;
+  color: var(--muted);
+}
+
+.yys-row .nm { font-family: var(--f-body); font-size: 12.5px; color: var(--ink-soft); }
+.yys-row .nm em { font-style: normal; color: var(--muted); font-size: 11px; }
+.yys-row .wr { text-align: right; color: var(--ink-soft); }
+.yys-row .pk, .yys-row .mt { text-align: right; }
+
+.danger-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 50px 54px;
+  gap: 9px;
+  align-items: center;
+  padding: 4px 0;
+  font-family: var(--f-data);
+  font-size: 11.5px;
+  font-variant-numeric: tabular-nums;
+  color: var(--muted);
+}
+
+.danger-row .faces { display: flex; gap: 3px; flex-wrap: wrap; }
+.danger-row .faces .av { width: 26px; height: 26px; }
+.danger-row .wr { text-align: right; color: var(--chart-neg); }
+.danger-row .mt { text-align: right; }
+
+@media (max-width: 900px) {
+  .team-detail { grid-template-columns: minmax(0, 1fr); gap: 18px; }
+}
+
 /* ---------- doi hinh an ---------- */
 
 .hidden-note {
@@ -895,6 +968,7 @@ __AVATAR_CSS__
       <span>Nguồn: <a href="https://yysrank.win/#/query/team" rel="noreferrer">yysrank.win</a> · <code>/api/team/rank</code></span>
       <span id="prov-update">—</span>
       <span id="prov-window">—</span>
+      <span id="prov-sibling"></span>
     </div>
   </header>
 
@@ -1109,6 +1183,10 @@ __AVATAR_CSS__
   document.getElementById("prov-update").textContent = "Cập nhật " + (META.last_update || "—");
   document.getElementById("prov-window").textContent =
     (META.start_date || "?") + " → " + (META.end_date || "?");
+  if (META.sibling && META.sibling.href) {
+    document.getElementById("prov-sibling").innerHTML =
+      '→ <a href="' + META.sibling.href + '">' + META.sibling.label + "</a>";
+  }
   document.getElementById("foot-meta").textContent =
     "Sinh lúc " + (META.generated_at || "—") + " · " + TEAMS.length + " đội hình · " +
     BOARD.length + " 式神 · ngưỡng " + (META.thres || 0) + " trận";
@@ -1170,7 +1248,8 @@ __AVATAR_CSS__
         '<span class="vn">' + name.vn + "</span></div>";
     }).join("");
 
-    return '<li class="team-row' + (elite ? " elite" : "") + '">' +
+    var panel = teamDetailPanel(team.team_ids);
+    return '<li class="team-row' + (elite ? " elite" : "") + (panel ? " expandable" : "") + '">' +
       '<span class="rank">' + position + "</span>" +
       '<div class="team">' + units + "</div>" +
       '<div class="metrics">' +
@@ -1180,7 +1259,73 @@ __AVATAR_CSS__
         '<span class="sub"><span><b>' + intFmt.format(team.total) + "</b> trận</span>" +
           "<span>chọn <b>" + pct(team.pick_rate, 3) + "</b></span>" +
           "<span><b>" + Math.round(team.duration) + "</b>s</span></span>" +
-      "</div></li>";
+        (panel ? '<button type="button" class="detail-toggle" aria-expanded="false">Chi tiết</button>' : "") +
+      "</div>" + panel + "</li>";
+  }
+
+  /* ---------- panel chi tiet doi hinh (hoi vien basic) ---------- */
+
+  var TEAM_PAID = (DATA.team_paid && DATA.team_paid.teams) || {};
+  var TEAM_PAID_META = DATA.team_paid || {};
+  var YYS = DATA.yys || {};
+
+  function teamKey(ids) {
+    return ids.slice().sort(function (a, b) { return a - b; }).join("-");
+  }
+
+  function yysLabel(id) {
+    var y = YYS[String(id)];
+    if (!y) return "#" + id;
+    return y.vn + (y.common ? ' <em>· ' + y.common + "</em>" : "");
+  }
+
+  function teamDetailPanel(ids) {
+    var paid = TEAM_PAID[teamKey(ids)];
+    if (!paid) return "";
+
+    var orders = (paid.orders || []).map(function (r, i) {
+      var chain = r.sequence.map(function (sid, k) {
+        var n = nameOf(sid);
+        return (k ? '<span class="arrow">›</span>' : "") +
+          '<span class="av a' + sid + '" role="img" aria-label="' + n.vn + '" title="lượt ' + (k + 1) + ": " + n.vn + '"></span>';
+      }).join("");
+      return '<div class="seq-row"><span class="slot">' + (i === 0 ? "tốt nhất" : "#" + (i + 1)) + "</span>" +
+        '<span class="chain">' + chain + "</span>" +
+        '<span class="wr">' + pct(r.win_rate, 1) + "</span>" +
+        '<span class="mt">' + intFmt.format(r.total) + "</span></div>";
+    }).join("");
+
+    var yysRows = (paid.yys || []).map(function (r) {
+      return '<div class="yys-row"><span class="nm">' + yysLabel(r.yys_id) + "</span>" +
+        '<span class="wr">' + pct(r.win_rate, 1) + "</span>" +
+        '<span class="pk">' + pct(r.pick_rate, 0) + "</span>" +
+        '<span class="mt">' + intFmt.format(r.total) + "</span></div>";
+    }).join("");
+
+    var dangers = (paid.counters || []).map(function (r) {
+      var faces = r.team_ids.map(function (sid) {
+        var n = nameOf(sid);
+        return '<span class="av a' + sid + '" role="img" aria-label="' + n.vn + '" title="' + n.vn + '"></span>';
+      }).join("");
+      return '<div class="danger-row"><span class="faces">' + faces + "</span>" +
+        '<span class="wr">' + pct(r.win_rate, 1) + "</span>" +
+        '<span class="mt">' + intFmt.format(r.total) + "</span></div>";
+    }).join("");
+
+    var left = orders
+      ? '<div class="panel-block"><h4>Thứ tự pick · 选取顺序 (≥' +
+        intFmt.format(TEAM_PAID_META.min_order_matches || 100) + " trận)</h4>" + orders + "</div>"
+      : "";
+    var right = "";
+    if (yysRows) {
+      right += '<div class="panel-block"><h4>Âm dương sư · 阴阳师 <span style="text-transform:none">(thắng / chọn / trận)</span></h4>' +
+        yysRows + "</div>";
+    }
+    if (dangers) {
+      right += '<div class="panel-block"><h4>Sợ nhất · 受制于 (ta thắng thấp nhất)</h4>' + dangers + "</div>";
+    }
+
+    return '<div class="team-detail" hidden>' + left + "<div>" + right + "</div></div>";
   }
 
   function matchesQuery(team, needle) {
@@ -1222,6 +1367,7 @@ __AVATAR_CSS__
   }
 
   qEl.addEventListener("input", render);
+  ledger.addEventListener("click", toggleDetail);
   sortEl.addEventListener("change", render);
   minEl.addEventListener("input", function () {
     minValEl.textContent = "≥ " + intFmt.format(Number(minEl.value));
@@ -1511,8 +1657,8 @@ __AVATAR_CSS__
   function toggleDetail(event) {
     var button = event.target.closest(".detail-toggle");
     if (!button) return;
-    var card = button.closest(".unit-card");
-    var panel = card && card.querySelector(".detail-panel");
+    var card = button.closest(".unit-card") || button.closest(".team-row");
+    var panel = card && card.querySelector(".detail-panel, .team-detail");
     if (!panel) return;
     var open = button.getAttribute("aria-expanded") === "true";
     button.setAttribute("aria-expanded", open ? "false" : "true");

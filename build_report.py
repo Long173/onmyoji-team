@@ -35,6 +35,7 @@ DEFAULT_AVATAR_DIR = Path("assets/avatars")
 DEFAULT_YUHUN_DIR = Path("assets/yuhun")
 DEFAULT_UNIT_INPUT = Path("out/shishen-rank-current.json")
 DEFAULT_DETAIL_INPUT = Path("out/shishen-detail-current.json")
+DEFAULT_TEAM_DETAIL_INPUT = Path("out/team-detail-current.json")
 DATA_LINKS = (
     {"label": "đội hình JSON", "href": "team-rank-current.json"},
     {"label": "đội hình CSV", "href": "team-rank-current.csv"},
@@ -61,6 +62,12 @@ def build_parser() -> argparse.ArgumentParser:
         default=DEFAULT_DETAIL_INPUT,
         help="file JSON của crawl_shishen_detail.py; thiếu thì bỏ sparkline và đội hình dưới ngưỡng",
     )
+    parser.add_argument(
+        "--team-detail-input",
+        type=Path,
+        default=DEFAULT_TEAM_DETAIL_INPUT,
+        help="file JSON của crawl_team_detail.py; chỉ dùng khi có --include-paid",
+    )
     parser.add_argument("--version-label", default="Phiên bản hiện hành", help="nhãn phiên bản trên masthead")
     parser.add_argument("--version-cn", default="", help="tên phiên bản tiếng Trung")
     parser.add_argument("--skip-download", action="store_true", help="không tải avatar còn thiếu")
@@ -72,6 +79,12 @@ def build_parser() -> argparse.ArgumentParser:
             "vào báo cáo. Đây là nội dung sau tường phí của yysrank.win — chỉ dùng cho "
             "bản xem tại máy, KHÔNG bật khi build bản publish công khai."
         ),
+    )
+    parser.add_argument(
+        "--sibling-link",
+        default=None,
+        metavar="HREF",
+        help="thêm link sang trang còn lại ở masthead, vd `full.html` hoặc `index.html`",
     )
     parser.add_argument(
         "--data-links",
@@ -118,7 +131,21 @@ def main(argv: list[str] | None = None) -> int:
     else:
         print(f"Không thấy {args.detail_input} — bỏ sparkline và đội hình dưới ngưỡng.", file=sys.stderr)
 
+    team_detail: dict | None = None
+    if args.include_paid and args.team_detail_input.is_file():
+        try:
+            team_detail = json.loads(args.team_detail_input.read_text(encoding="utf-8"))
+        except (OSError, json.JSONDecodeError) as exc:
+            print(f"Bỏ qua chi tiết đội hình — không đọc được {args.team_detail_input}: {exc}", file=sys.stderr)
+            team_detail = None
+
     unit_rows = (unit_rank or {}).get("shishen") or []
+    team_counter_ids = {
+        int(sid)
+        for entry in ((team_detail or {}).get("details") or [])
+        for row in ((entry.get("detail") or {}).get("counter") or [])
+        for sid in (row.get("team") or [])
+    }
     hidden_ids = {
         int(sid)
         for entry in ((unit_detail or {}).get("details") or [])
@@ -130,6 +157,7 @@ def main(argv: list[str] | None = None) -> int:
             {stat.shishen_id for stat in stats}
             | set(referenced_shishen_ids(unit_rows))
             | hidden_ids
+            | team_counter_ids
         )
     )
     yuhun_ids = referenced_yuhun_ids(unit_rows)
@@ -180,7 +208,20 @@ def main(argv: list[str] | None = None) -> int:
             data_links=DATA_LINKS if args.data_links else (),
             unit_rank=unit_rank,
             unit_detail=unit_detail,
+            team_detail=team_detail,
             include_paid=args.include_paid,
+            sibling_link=(
+                {
+                    "href": args.sibling_link,
+                    "label": (
+                        "Bản chỉ dữ liệu mở"
+                        if args.include_paid
+                        else "Bản đầy đủ (có dữ liệu hội viên)"
+                    ),
+                }
+                if args.sibling_link
+                else None
+            ),
         )
         avatar_css = build_avatar_css(shishen_ids, args.avatar_dir)
         yuhun_css = build_yuhun_css(yuhun_ids, args.yuhun_dir)
@@ -195,7 +236,8 @@ def main(argv: list[str] | None = None) -> int:
     paid_note = ""
     if args.include_paid:
         paid_units = len(((payload.get("paid") or {}).get("units")) or {})
-        paid_note = f", {paid_units} 式神 có dữ liệu hội viên (BẢN NÀY KHÔNG ĐỂ PUBLISH)"
+        paid_teams = len(((payload.get("team_paid") or {}).get("teams")) or {})
+        paid_note = f", {paid_units} 式神 + {paid_teams} đội hình có dữ liệu hội viên"
     print(
         f"Xong: {args.output} ({size_mb:.2f} MB, {len(teams)} đội hình, "
         f"{len(stats)} 式神 trong meta, {len(unit_rows)} 式神 xếp hạng, "

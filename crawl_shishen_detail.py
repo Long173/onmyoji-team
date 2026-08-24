@@ -19,7 +19,7 @@ import sys
 import time
 from pathlib import Path
 
-from onmyoji.auth import AuthError, has_token, load_token
+from onmyoji.auth import AuthError, has_any_credential, resolve_token
 from onmyoji.http import ApiError, AuthRequiredError
 from onmyoji.shishen_detail import ShishenDetailQuery, fetch_detail
 
@@ -73,9 +73,9 @@ def main(argv: list[str] | None = None) -> int:
         return 1
 
     token: str | None = None
-    if not args.no_token and has_token():
+    if not args.no_token and has_any_credential():
         try:
-            token = load_token()
+            token = resolve_token()
         except AuthError as exc:
             print(f"Bỏ qua token: {exc}", file=sys.stderr)
 

@@ -208,17 +208,49 @@ Nên `onmyoji/report.py` lọc ngự hồn từ 100 trận, ghép cặp từ 300
 và tính **chênh lệch so với tỉ lệ thắng chung của chính 式神 đó** — đó mới là tín hiệu
 dùng được ("bộ này hơn trung bình +11,2 điểm"), chứ không phải con số tuyệt đối.
 
-### ⚠️ Không publish dữ liệu trả phí
+### Session của yysrank.win: một phiên, refresh dùng một lần
 
-Đây là nội dung sau tường phí của yysrank.win. Ba lớp chặn:
+Ba điều đã kiểm chứng bằng thực nghiệm, quyết định toàn bộ kiến trúc auth:
 
-1. `build_report.py` **mặc định không** đưa dữ liệu hội viên vào báo cáo; phải khai
-   tường minh `--include-paid`.
-2. Workflow **không** truyền `--include-paid`, và chạy `crawl_shishen_detail.py --no-token`
-   để runner không bao giờ lấy được dữ liệu đó dù có secret.
-3. `.token`, `out/`, `report/` đều gitignored.
+| Điều | Bằng chứng |
+|---|---|
+| Access token sống **12 giờ** | claim `exp` − `iat` = 43.200s |
+| Refresh token sống **7 ngày** nhưng **dùng một lần** | gọi `/api/auth/refresh-token` lần hai → `409` |
+| Site chỉ cho **một session** | body của 409 là `重复登录` (đăng nhập trùng) |
 
-Bản đầy đủ để ở `report/meta-dau-ky-full.html`, mở tại máy — không đẩy lên đâu cả.
+⇒ **CI không thể tự crawl dữ liệu hội viên.** Refresh trong CI sẽ tạo session mới và
+đăng xuất bạn khỏi browser; bạn đăng nhập lại thì token của CI chết. Hai bên loại trừ nhau.
+
+Vì vậy `resolve_token()` **ưu tiên access token đang có** và chỉ refresh khi `exp` đã qua,
+rồi ghi ngay cặp token mới xuống file. Refresh bừa bãi là đăng xuất chính mình.
+
+Lỗi `409` được xếp vào `AUTH_FAILURE_CODES` cùng 401/403 (bundle của site cũng coi
+`401||409` là auth failure) và không retry.
+
+### Hai trang: `/` tự động, `/full.html` build tay
+
+`build_report.py` mặc định **không** đưa dữ liệu hội viên vào báo cáo — phải khai
+`--include-paid`. Vì CI không lấy được dữ liệu đó, trang đầy đủ được build tại máy
+rồi commit vào `prebuilt/full.html`; workflow chỉ copy nó sang `site/full.html`.
+
+```bash
+# Sau khi đăng nhập lại và chạy ./save-token.sh
+python3 crawl_shishen_detail.py
+python3 crawl_team_detail.py --top 40 --by total
+python3 build_report.py --include-paid --data-links \
+  --sibling-link index.html --output prebuilt/full.html
+git add prebuilt/full.html && git commit -m "chore: cập nhật trang dữ liệu hội viên"
+```
+
+| Trang | Nguồn | Cập nhật |
+|---|---|---|
+| `/` | CI crawl, chỉ dữ liệu mở | tự động 01:00 UTC mỗi ngày |
+| `/full.html` | `prebuilt/full.html` đã commit | thủ công, khi bạn chạy lệnh trên |
+
+Hai trang link chéo nhau ở masthead qua cờ `--sibling-link`.
+
+`.token`, `.refresh-token`, `out/`, `report/`, `site/` vẫn gitignored — chỉ
+`prebuilt/full.html` được commit.
 
 ### Màu thanh chênh lệch
 
