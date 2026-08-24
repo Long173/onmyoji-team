@@ -1,0 +1,9 @@
+__pycache__/
+*.pyc
+.DS_Store
+
+# Dữ liệu crawl và ảnh lấy từ yysrank.win — sinh lại bằng CLI, không commit
+out/
+report/
+site/
+assets/avatars/
