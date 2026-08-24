@@ -344,6 +344,26 @@ endpoint nên tưởng nó mở. Nó trả `401 请登录后使用本功能`, n�
 `crawl_player_board.py` (cần token) và đi cùng khối `prebuilt/paid.json`, không phải
 khối CI crawl. Lọc từ 20 trận: 96/100 dòng đạt ngưỡng.
 
+### Không có "chỉ số khuyến nghị" — và tại sao
+
+yysrank.win **không công bố** dữ liệu chỉ số khuyến nghị cho Thức thần. Đã tra hết
+92 endpoint: `/api/strategy/list-yuhun-config` trả rỗng (đó là preset **bạn tự lưu**),
+và bundle không có thuật ngữ nào kiểu `推荐属性` / `属性推荐` / `建议属性`.
+
+Công cụ `御魂计算器` của họ không phải nguồn dữ liệu: nó là **solver chạy trên máy
+người dùng** — import kho ngự hồn của chính bạn (định dạng 痒痒熊), đặt ngưỡng (`阈值`),
+rồi dùng CPU cục bộ giải bài toán phân bổ. Chunk của nó có cả chuỗi
+`无法获取本机cpu核心数`.
+
+Thay vào đó panel đội hình có khối **Chỉ số gốc, xếp theo tốc**: 5 Thức thần với
+Tốc / Công / HP / Phòng từ `/api/asset/shishen_stats`, sắp theo tốc giảm dần, kèm
+**chênh tốc trong đội**. Trong đấu kỹ tốc quyết định thứ tự hành động nên khoảng chênh
+đó cho biết cần bù bao nhiêu tốc từ ngự hồn để đổi thứ tự. Khối ghi rõ đây là chỉ số
+**gốc, chưa tính ngự hồn** — không trình bày như thể là khuyến nghị.
+
+`crawl_shishen_rank.py` giờ xuất chỉ số + tên cho **cả 273/277** Thức thần thay vì chỉ
+những con có trong bảng xếp hạng, vì đội hình chứa 81 Thức thần trong khi bảng chỉ có 42.
+
 ### Màu thanh chênh lệch
 
 Cặp đối cực đã validate bằng `dataviz/validate_palette.js`:

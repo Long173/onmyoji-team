@@ -112,11 +112,13 @@ def main(argv: list[str] | None = None) -> int:
             "matches_analysed": rank.matches_analysed,
         },
         "shishen": [dict(row) for row in rank.rows],
-        "stats": {str(k): v for k, v in stats.items() if k in referenced_shishen_ids(rank.rows)},
+        # Xuất chỉ số và tên cho TẤT CẢ Thức thần, không riêng cái có trong bảng
+        # xếp hạng: panel đội hình cần chỉ số của cả 5 con, mà đội hình có thể
+        # chứa Thức thần không đạt ngưỡng để lên bảng.
+        "stats": {str(k): v for k, v in sorted(stats.items())},
         "names": {
             str(sid): {"vn": n.hanviet, "cn": n.chinese, "common": n.common}
-            for sid, n in names.items()
-            if sid in referenced_shishen_ids(rank.rows)
+            for sid, n in sorted(names.items())
         },
         # Xuất TẤT CẢ ngự hồn (chỉ ~79 dòng text) chứ không riêng cái được tham chiếu:
         # /api/shishen/detail của hội viên basic nhắc tới nhiều bộ hơn most_used_yuhuns.
