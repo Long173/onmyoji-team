@@ -254,6 +254,38 @@ section.block { padding-top: 56px; }
 
 .field input[type="range"] { width: 150px; accent-color: var(--jade); }
 
+.field.check {
+  flex-direction: row;
+  align-items: center;
+  gap: 7px;
+  padding-bottom: 7px;
+}
+
+.field.check input[type="checkbox"] {
+  width: 15px;
+  height: 15px;
+  accent-color: var(--gold);
+  margin: 0;
+}
+
+.field.check label {
+  font-family: var(--f-body);
+  font-size: 13.5px;
+  letter-spacing: 0;
+  text-transform: none;
+  color: var(--ink-soft);
+  cursor: pointer;
+}
+
+.field.check .hint {
+  font-family: var(--f-data);
+  font-size: 11px;
+  color: var(--muted);
+}
+
+/* Dòng có dữ liệu chi tiết: gạch vàng mảnh bên trái để tìm được khi cuộn. */
+.team-row.has-detail { box-shadow: inset 2px 0 0 var(--gold); }
+
 .field .range-row {
   display: flex;
   align-items: center;
@@ -1015,6 +1047,10 @@ __AVATAR_CSS__
           <span id="minmatch-val">≥ 100</span>
         </div>
       </div>
+      <div class="field check" id="only-detail-field" hidden>
+        <input id="only-detail" type="checkbox">
+        <label for="only-detail">Chỉ đội có chi tiết <span class="hint" id="only-detail-count"></span></label>
+      </div>
       <div class="result-count" id="count">—</div>
     </div>
 
@@ -1232,7 +1268,9 @@ __AVATAR_CSS__
 
   /* ---------- ledger ---------- */
 
+  var LEDGER_LIMIT = 800;
   var ledger = document.getElementById("ledger");
+  var onlyDetailEl = document.getElementById("only-detail");
   var countEl = document.getElementById("count");
   var qEl = document.getElementById("q");
   var sortEl = document.getElementById("sort");
@@ -1249,7 +1287,7 @@ __AVATAR_CSS__
     }).join("");
 
     var panel = teamDetailPanel(team.team_ids);
-    return '<li class="team-row' + (elite ? " elite" : "") + (panel ? " expandable" : "") + '">' +
+    return '<li class="team-row' + (elite ? " elite" : "") + (panel ? " expandable has-detail" : "") + '">' +
       '<span class="rank">' + position + "</span>" +
       '<div class="team">' + units + "</div>" +
       '<div class="metrics">' +
@@ -1339,12 +1377,18 @@ __AVATAR_CSS__
     return false;
   }
 
+  function hasDetail(team) {
+    return Boolean(TEAM_PAID[teamKey(team.team_ids)]);
+  }
+
   function render() {
     var needle = qEl.value.trim().toLowerCase();
     var floor = Number(minEl.value);
     var key = sortEl.value;
+    var onlyDetail = onlyDetailEl.checked;
 
     var rows = TEAMS.filter(function (t) {
+      if (onlyDetail && !hasDetail(t)) return false;
       return t.total >= floor && matchesQuery(t, needle);
     }).slice().sort(function (a, b) {
       return b[key] - a[key];
@@ -1357,13 +1401,20 @@ __AVATAR_CSS__
       return;
     }
 
-    var chunk = rows.slice(0, 400);
+    var chunk = rows.slice(0, LEDGER_LIMIT);
     ledger.innerHTML = chunk.map(function (t, i) { return teamRow(t, i + 1); }).join("");
     if (rows.length > chunk.length) {
       ledger.insertAdjacentHTML("beforeend",
         '<li class="empty">Còn ' + intFmt.format(rows.length - chunk.length) +
         " đội hình nữa — thu hẹp bộ lọc hoặc xem file JSON/CSV kèm theo.</li>");
     }
+  }
+
+  var detailTeamCount = TEAMS.filter(hasDetail).length;
+  if (detailTeamCount) {
+    document.getElementById("only-detail-field").hidden = false;
+    document.getElementById("only-detail-count").textContent = "(" + detailTeamCount + ")";
+    onlyDetailEl.addEventListener("change", render);
   }
 
   qEl.addEventListener("input", render);
